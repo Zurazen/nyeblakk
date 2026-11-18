@@ -1,0 +1,3428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Seblak Seafood Juragan 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 with Primary + Fallback CDN for Mobile & Desktop Reliability -->
+    <script>
+        window.__threeLoadError = false;
+        function loadThreeFallback() {
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            s.onerror = function () { window.__threeLoadError = true; };
+            document.head.appendChild(s);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" onerror="loadThreeFallback()"></script>
+    <!-- Fonts: Space Grotesk, Plus Jakarta Sans, Courier Prime & Share Tech Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #2b1d12;
+            --kraft: #e8cfa6;
+            --kraft-dark: #d4b483;
+            --enamel-green: #2d6a4f;
+            --enamel-cream: #faf6eb;
+            --terracotta: #c83e2b;
+            --turmeric: #e59819;
+            --wood-dark: #3d2516;
+            --wood-mid: #5c3a21;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #160f0a;
+            color: var(--ink);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono-print { font-family: 'Courier Prime', monospace; }
+        .font-lcd { font-family: 'Share Tech Mono', monospace; }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        canvas, #game-canvas {
+            position: fixed;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .safe-top {
+            padding-top: max(0.5rem, env(safe-area-inset-top));
+            padding-left: max(0.55rem, env(safe-area-inset-left));
+            padding-right: max(0.55rem, env(safe-area-inset-right));
+        }
+        .safe-bottom {
+            padding-bottom: max(0.65rem, env(safe-area-inset-bottom));
+            padding-left: max(0.55rem, env(safe-area-inset-left));
+            padding-right: max(0.55rem, env(safe-area-inset-right));
+        }
+        .tap-target {
+            min-height: 40px;
+            touch-action: manipulation;
+        }
+
+        /* Tactile Warung Surfaces */
+        .enamel-card {
+            background-color: var(--enamel-cream);
+            color: var(--ink);
+            border: 2.5px solid var(--ink);
+            box-shadow: 4px 4px 0px var(--ink);
+        }
+
+        .wood-tray {
+            background-color: var(--wood-dark);
+            background-image: repeating-linear-gradient(
+                90deg,
+                rgba(255,255,255,0.03) 0px,
+                rgba(255,255,255,0.03) 2px,
+                transparent 2px,
+                transparent 14px
+            );
+            color: var(--enamel-cream);
+            border: 2.5px solid #1a0f08;
+            box-shadow: 4px 4px 0px #120a05;
+        }
+
+        /* Kertas Minyak Nota */
+        .kertas-minyak {
+            background-color: #f3dfb9;
+            background-image:
+                radial-gradient(rgba(139, 94, 52, 0.08) 1px, transparent 0),
+                linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(180,140,85,0.12) 100%);
+            background-size: 14px 14px, 100% 100%;
+            color: var(--ink);
+            border: 2.5px solid var(--ink);
+            box-shadow: 5px 5px 0px rgba(24, 15, 9, 0.85);
+            position: relative;
+        }
+
+        .kertas-minyak::after {
+            content: '';
+            position: absolute;
+            left: -2.5px;
+            right: -2.5px;
+            bottom: -9px;
+            height: 8px;
+            background: linear-gradient(135deg, #f3dfb9 33.33%, transparent 33.33%) 0 0,
+                        linear-gradient(225deg, #f3dfb9 33.33%, transparent 33.33%) 0 0;
+            background-size: 12px 16px;
+            background-repeat: repeat-x;
+            filter: drop-shadow(0px 3px 0px var(--ink));
+        }
+
+        .nota-clip {
+            width: 44px;
+            height: 14px;
+            background: #94a3b8;
+            border: 2px solid var(--ink);
+            border-radius: 3px;
+            box-shadow: 2px 2px 0px var(--ink);
+        }
+
+        .btn-tactile {
+            border: 2.5px solid var(--ink);
+            box-shadow: 3px 3px 0px var(--ink);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s;
+            cursor: pointer;
+        }
+        .btn-tactile:hover:not(:disabled) {
+            filter: brightness(1.05);
+        }
+        .btn-tactile:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--ink);
+        }
+
+        .lcd-screen {
+            background-color: #1b261d;
+            border: 3px solid #0f1711;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.8);
+            color: #4ade80;
+            text-shadow: 0 0 6px rgba(74, 222, 128, 0.45);
+        }
+
+        .uang-kertas {
+            position: relative;
+            border: 2px solid var(--ink);
+            box-shadow: 2px 3px 0px var(--ink);
+            border-radius: 3px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .uang-kertas::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border: 1px dashed rgba(255, 255, 255, 0.45);
+            pointer-events: none;
+        }
+        .uang-kertas:hover { transform: translateY(-2px); box-shadow: 3px 5px 0px var(--ink); }
+        .uang-kertas:active { transform: translateY(1px); box-shadow: 1px 1px 0px var(--ink); }
+
+        .uang-koin {
+            border-radius: 9999px;
+            border: 2.5px solid var(--ink);
+            box-shadow: 2px 3px 0px var(--ink);
+            background-color: #eab308;
+            color: var(--ink);
+            transition: transform 0.1s ease;
+            cursor: pointer;
+        }
+        .uang-koin:hover { transform: translateY(-2px); }
+        .uang-koin:active { transform: translateY(1px); box-shadow: 1px 1px 0px var(--ink); }
+
+        .stacked-bill-chip {
+            border: 1.5px solid var(--ink);
+            box-shadow: 2px 2px 0px var(--ink);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .stacked-bill-chip:hover { transform: scale(1.06) rotate(-2deg); }
+
+        .wok-pill-btn {
+            border: 1.5px solid var(--ink);
+            box-shadow: 1.5px 1.5px 0px var(--ink);
+            transition: transform 0.08s, background-color 0.1s;
+            cursor: pointer;
+        }
+        .wok-pill-btn:hover { background-color: #fee2e2; border-color: #c83e2b; }
+
+        .tablet-frame {
+            background-color: #1e293b;
+            border: 3px solid #0f172a;
+            box-shadow: 4px 4px 0px #0f172a;
+            color: #f8fafc;
+        }
+
+        /* Spicy Vignette Overlay for Prasmanan Mode */
+        #spicy-vignette {
+            pointer-events: none;
+            box-shadow: inset 0 0 85px rgba(220, 38, 38, 0.72);
+            transition: opacity 0.3s ease;
+        }
+
+        @keyframes stampPop {
+            0% { transform: scale(1.28) rotate(-3deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-stamp {
+            animation: stampPop 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translateY(0px) scale(0.95); }
+            100% { opacity: 0; transform: translateY(-34px) scale(1.05); }
+        }
+        .floating-callout {
+            position: fixed;
+            pointer-events: none;
+            z-index: 45;
+            background-color: #faf6eb;
+            color: #2b1d12;
+            border: 2px solid #2b1d12;
+            box-shadow: 2px 2px 0px #2b1d12;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 800;
+            animation: floatUpFade 0.85s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Spicy Sweat Vignette (Suite 4: Prasmanan Spice Tolerance) -->
+    <div id="spicy-vignette" class="fixed inset-0 z-10 opacity-0"></div>
+
+    <!-- Runtime Error Fallback -->
+    <div id="runtime-error-box" class="hidden fixed inset-0 z-50 bg-[#120a05]/95 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-md w-full rounded-xl p-5 text-center">
+            <div class="text-4xl mb-2">⚠️</div>
+            <h2 class="font-display font-extrabold text-lg uppercase text-[#c83e2b]">Grafis 3D Terkendala</h2>
+            <p id="runtime-error-msg" class="font-mono-print text-xs text-[#2b1d12] mt-2">Browser membatasi WebGL atau koneksi lambat.</p>
+            <button onclick="location.reload()" class="btn-tactile tap-target mt-4 w-full bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2.5 rounded-lg text-sm">
+                Muat Ulang Warung
+            </button>
+        </div>
+    </div>
+
+    <!-- Diegetic Desktop Hover Tooltip -->
+    <div id="hover-tooltip" class="hidden fixed z-30 pointer-events-none -translate-x-1/2 -translate-y-[125%] enamel-card px-2.5 py-1.5 rounded-lg text-xs">
+        <div class="flex items-center gap-1.5 font-display font-extrabold">
+            <span id="tt-icon">🦐</span>
+            <span id="tt-name">Udang Segar</span>
+            <span id="tt-price" class="font-mono-print text-[10px] bg-[#e59819] px-1 rounded">Rp 6.000</span>
+        </div>
+        <div id="tt-status" class="font-mono-print text-[10px] text-[#5c3a21] mt-0.5">Stok: 10 | Wajan: 0</div>
+    </div>
+
+    <!-- TOP HUD: WARUNG SIGNBOARD, LEVEL, DAY, KAS & MANAGEMENT BUTTONS -->
+    <header class="fixed top-0 left-0 right-0 z-20 safe-top flex flex-wrap items-start justify-between gap-1.5 pointer-events-none">
+        <!-- Left: Warung Name, Level, Day, FYP Badge & Saldo -->
+        <div class="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+            <div class="enamel-card px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg flex items-center gap-2">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-[#c83e2b] border-2 border-[#2b1d12] flex items-center justify-center text-base sm:text-xl shadow-[2px_2px_0px_#2b1d12] shrink-0">
+                    🍲
+                </div>
+                <div>
+                    <div class="flex items-center gap-1 flex-wrap">
+                        <h1 id="hud-warung-title" class="text-[11px] sm:text-xs font-extrabold tracking-tight font-display uppercase text-[#2b1d12]">
+                            Gerobak Kaki Lima
+                        </h1>
+                        <span id="hud-level-badge" class="font-mono-print text-[9px] font-bold bg-[#2d6a4f] text-[#faf6eb] px-1 py-0.5 border border-[#2b1d12] rounded">
+                            LV.1
+                        </span>
+                        <span id="hud-day-badge" class="font-mono-print text-[9px] font-bold bg-[#e59819] text-[#2b1d12] px-1 py-0.5 border border-[#2b1d12] rounded">
+                            HARI 1
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <div class="w-14 sm:w-20 h-1.5 bg-[#d4b483] border border-[#2b1d12] rounded-sm overflow-hidden">
+                            <div id="hud-xp-bar" class="h-full bg-[#e59819] transition-all duration-300" style="width: 10%"></div>
+                        </div>
+                        <span id="hud-stars" class="text-[10px] tracking-tight">⭐⭐⭐⭐⭐</span>
+                        <span id="hud-fyp-badge" class="hidden font-mono-print text-[9px] font-bold bg-[#dc2626] text-white px-1 rounded animate-pulse">🔥 FYP 2X!</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kas Warung / Dompet Pembeli -->
+            <div id="hud-money-box" class="wood-tray px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors">
+                <div class="flex items-center justify-between gap-1.5">
+                    <span id="hud-wallet-label" class="text-[9px] uppercase tracking-wider text-[#e8cfa6] font-bold">Kas Warung</span>
+                    <span id="hud-minus-tag" class="hidden font-mono-print text-[8px] font-bold bg-[#dc2626] text-white px-1 rounded animate-pulse">MINUS!</span>
+                </div>
+                <div id="hud-money" class="font-lcd text-sm sm:text-lg text-[#4ade80] tracking-wide leading-tight">
+                    Rp 25.000
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Action Bar (Mode, Stok, Dekor, Kasbon, Upgrade, Misi, Tutup Hari) -->
+        <div class="flex flex-wrap items-center gap-1 pointer-events-auto">
+            <button id="btn-play-mode" onclick="togglePlayMode()" class="btn-tactile tap-target px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold bg-[#e59819] text-[#2b1d12] flex items-center gap-1">
+                <span id="mode-icon">👨‍🍳</span>
+                <span id="mode-label">Juragan</span>
+            </button>
+
+            <button id="btn-stok-market" onclick="openMarketModal()" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 bg-[#faf6eb] relative">
+                <span>🛒</span> <span class="hidden sm:inline">Stok</span>
+                <span id="low-stock-dot" class="hidden w-2 h-2 rounded-full bg-[#dc2626] border border-[#2b1d12]"></span>
+            </button>
+
+            <button onclick="openDecorModal()" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 bg-[#faf6eb]">
+                <span>🎨</span> <span class="hidden md:inline">Dekor</span>
+            </button>
+
+            <button onclick="openKasbonModal()" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 bg-[#fef3c7]">
+                <span>📒</span> <span class="hidden md:inline">Kasbon</span> <span id="kasbon-count-badge" class="font-mono-print text-[9px] bg-[#2b1d12] text-white px-1 rounded">0</span>
+            </button>
+
+            <button onclick="openUpgradeModal()" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 bg-[#faf6eb]">
+                <span>🛠️</span> <span class="hidden md:inline">Upgrade</span>
+            </button>
+
+            <button onclick="toggleQuestDrawer()" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold flex items-center gap-1 bg-[#fef08a]">
+                <span>📋</span> <span class="hidden md:inline">Misi</span>
+                <span id="quest-claim-dot" class="hidden w-2 h-2 rounded-full bg-[#dc2626] border border-[#2b1d12]"></span>
+            </button>
+
+            <button id="btn-end-day" onclick="endDaySummary()" class="btn-tactile tap-target px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold bg-[#3d2516] text-[#fde047] flex items-center gap-1">
+                <span>🌙</span> <span class="hidden sm:inline">Tutup Hari</span>
+            </button>
+
+            <button id="btn-audio" onclick="toggleAudio()" title="Suara & Radio" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-xs font-bold">
+                🔊
+            </button>
+            <button onclick="openTutorial()" title="Cara Main" class="btn-tactile tap-target enamel-card px-2 py-1 rounded-lg text-xs font-extrabold">
+                ?
+            </button>
+        </div>
+    </header>
+
+    <!-- SUITE 2: STREET EVENT POP-UP (PENGAMEN / KANG PARKIR) -->
+    <div id="street-event-banner" class="hidden fixed top-[58px] sm:top-16 left-1/2 -translate-x-1/2 z-30 w-[calc(100vw-20px)] max-w-md pointer-events-auto animate-stamp">
+        <div class="enamel-card rounded-xl p-2.5 sm:p-3 bg-[#fef3c7] flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <span id="event-icon" class="text-2xl shrink-0">🎸</span>
+                <div class="min-w-0">
+                    <div id="event-title" class="font-display font-extrabold text-xs text-[#2b1d12]">Pengamen Jalanan Datang!</div>
+                    <p id="event-desc" class="font-mono-print text-[10px] text-[#5c3a21] truncate">"Permisi Bang, bagi receh Rp 2.000 biar pembeli betah!"</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="resolveStreetEvent(true)" class="btn-tactile bg-[#2d6a4f] text-white font-display font-bold text-[10px] sm:text-xs px-2.5 py-1.5 rounded">
+                    Kasih Rp 2.000
+                </button>
+                <button onclick="resolveStreetEvent(false)" class="btn-tactile bg-[#c83e2b] text-white font-display font-bold text-[10px] sm:text-xs px-2 py-1.5 rounded">
+                    Cuekin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUITE 1: STOVE HEAT & DONENESS MINIGAME OVERLAY -->
+    <div id="stove-minigame-panel" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-[calc(100vw-24px)] max-w-md pointer-events-auto animate-stamp">
+        <div class="wood-tray rounded-xl p-4 text-center">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-display font-extrabold text-sm text-[#fde047]">🔥 Atur Api & Tingkat Kematangan</span>
+                <span id="stove-heat-label" class="font-mono-print text-xs font-bold bg-[#2d6a4f] text-white px-2 py-0.5 rounded">Api Sedang</span>
+            </div>
+
+            <!-- Doneness Gauge Bar -->
+            <div class="relative w-full h-7 bg-[#1b261d] border-2 border-[#faf6eb] rounded-lg overflow-hidden mb-2">
+                <!-- Sweet spot zone (58% - 84%) -->
+                <div class="absolute top-0 bottom-0 bg-[#22c55e]/35 border-x-2 border-[#4ade80]" style="left: 58%; width: 26%;"></div>
+                <!-- Danger burnt zone (84% - 100%) -->
+                <div class="absolute top-0 bottom-0 bg-[#dc2626]/45" style="left: 84%; width: 16%;"></div>
+                <!-- Progress fill -->
+                <div id="doneness-fill-bar" class="h-full bg-[#f59e0b] transition-all duration-75" style="width: 0%;"></div>
+                <div id="doneness-status-text" class="absolute inset-0 flex items-center justify-center font-mono-print text-xs font-extrabold text-white drop-shadow">
+                    Masih Mentah... (0%)
+                </div>
+            </div>
+
+            <div class="flex justify-between font-mono-print text-[10px] text-[#e8cfa6] mb-3 px-1">
+                <span>Alot (&lt;58%)</span>
+                <span class="text-[#4ade80] font-bold">MATANG PAS (58-84%)</span>
+                <span class="text-[#f87171] font-bold">GOSONG (&gt;84%)</span>
+            </div>
+
+            <!-- Heat Buttons + Stir Irus -->
+            <div class="grid grid-cols-3 gap-1.5 mb-3">
+                <button onclick="setStoveHeat('LOW')" id="btn-heat-low" class="btn-tactile bg-[#334155] text-white font-display font-bold text-xs py-2 rounded">
+                    🕯️ Api Kecil
+                </button>
+                <button onclick="setStoveHeat('MED')" id="btn-heat-med" class="btn-tactile bg-[#e59819] text-[#2b1d12] font-display font-extrabold text-xs py-2 rounded">
+                    🔥 Api Sedang
+                </button>
+                <button onclick="setStoveHeat('HIGH')" id="btn-heat-high" class="btn-tactile bg-[#334155] text-white font-display font-bold text-xs py-2 rounded">
+                    🌋 Api Besar
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="stirWokLadle()" class="btn-tactile tap-target bg-[#faf6eb] text-[#2b1d12] font-display font-extrabold py-2.5 px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-1">
+                    <span>🥄</span> <span>Aduk Irus (-8% Panas)</span>
+                </button>
+                <button onclick="finishCookingFromStove()" class="btn-tactile tap-target bg-[#2d6a4f] text-[#faf6eb] font-display font-extrabold py-2.5 px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-1">
+                    <span>🍲</span> <span>Angkat Wajan!</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUEST BOARD DRAWER -->
+    <section id="quest-drawer" class="hidden fixed top-[60px] sm:top-16 right-2.5 sm:right-4 z-30 w-[calc(100vw-20px)] max-w-sm pointer-events-auto animate-stamp">
+        <div class="enamel-card rounded-xl p-3.5 bg-[#faf6eb]">
+            <div class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-2 mb-2.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-lg">📋</span>
+                    <h3 class="font-display font-extrabold text-sm uppercase">Papan Misi & Target Harian</h3>
+                </div>
+                <button onclick="toggleQuestDrawer()" class="font-mono-print text-xs font-bold bg-[#2b1d12] text-[#faf6eb] px-2 py-0.5 rounded">✕</button>
+            </div>
+            <div id="quest-list-container" class="space-y-2 max-h-64 overflow-y-auto pr-0.5"></div>
+        </div>
+    </section>
+
+    <!-- NOTA PESANAN / PAPAN PRASMANAN (KERTAS MINYAK) -->
+    <aside id="order-panel" class="fixed top-[62px] sm:top-16 left-2.5 md:left-auto md:right-4 z-20 w-[calc(100vw-20px)] max-w-[330px] sm:w-80 pointer-events-auto transition-all duration-200">
+        <div class="hidden md:flex justify-center -mb-2 relative z-10">
+            <div class="nota-clip"></div>
+        </div>
+
+        <div id="order-card-shell" class="kertas-minyak rounded-t-md pt-2 pb-3 sm:pt-2.5 sm:pb-3.5 px-3">
+            <!-- Online Food App Header Badge -->
+            <div id="online-order-banner" class="hidden tablet-frame rounded-md px-2.5 py-1 mb-1.5 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-sm">🛵</span>
+                    <div>
+                        <div class="font-display font-bold text-[10px] text-[#4ade80] leading-none">OJOL FOOD DELIVERY</div>
+                        <div class="font-mono-print text-[9px] text-slate-300">Kemas Box & Verifikasi QRIS</div>
+                    </div>
+                </div>
+                <div id="online-timer-badge" class="font-lcd text-sm bg-[#dc2626] text-white px-2 py-0.5 rounded border border-white/30">
+                    45s
+                </div>
+            </div>
+
+            <!-- VIP Food Vlogger Banner (Suite 2) -->
+            <div id="vip-vlogger-banner" class="hidden bg-[#7c3aed] text-white border-2 border-[#2b1d12] rounded-md px-2.5 py-1 mb-1.5 flex items-center justify-between">
+                <span class="font-display font-extrabold text-[10px] tracking-wide">📸 FOOD VLOGGER VIP LIVE!</span>
+                <span class="font-mono-print text-[9px] bg-[#fde047] text-[#2b1d12] font-bold px-1.5 rounded">FYP = 2X TIP</span>
+            </div>
+
+            <!-- Receipt Header -->
+            <div onclick="toggleOrderSlip()" class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-1.5 mb-1.5 cursor-pointer md:cursor-default">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span id="cust-avatar" class="text-lg bg-[#faf6eb] border-2 border-[#2b1d12] w-8 h-8 rounded flex items-center justify-center shadow-[2px_2px_0px_#2b1d12] shrink-0">🧑</span>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <div id="cust-name" class="font-display font-bold text-xs leading-none truncate">Mas Budi</div>
+                            <span id="order-type-badge" class="font-mono-print text-[9px] font-bold bg-[#2d6a4f] text-[#faf6eb] px-1.5 py-0.5 rounded-sm">RESEP PAS</span>
+                        </div>
+                        <div id="cust-quote" class="font-mono-print text-[10px] text-[#7c2d12] font-bold mt-1 leading-tight truncate">
+                            "Pedesnya nampol Bang!"
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="btn-toggle-nota" aria-label="Buka/Tutup Nota" class="md:hidden font-mono-print text-[10px] font-bold bg-[#2b1d12] text-[#faf6eb] px-2 py-1 rounded-sm shrink-0 ml-1">
+                    ▲
+                </button>
+            </div>
+
+            <!-- Collapsible Body on Mobile -->
+            <div id="nota-body" class="block">
+                <!-- MODE A: EXACT RECIPE LIST -->
+                <div id="exact-order-section">
+                    <div class="flex justify-between items-center font-mono-print text-[10px] font-bold uppercase text-[#5c3a21] mb-1">
+                        <span>Takaran Pesanan:</span>
+                        <span id="nota-progress-pill" class="bg-[#e59819] text-[#2b1d12] px-1.5 py-0.5 rounded-sm">0/0</span>
+                    </div>
+                    <ul id="order-items-list" class="space-y-1 font-mono-print text-[11px] font-bold mb-1.5 max-h-24 sm:max-h-28 overflow-y-auto pr-0.5"></ul>
+                </div>
+
+                <!-- MODE B: FLEXIBLE BUDGET ORDER -->
+                <div id="budget-order-section" class="hidden mb-1.5">
+                    <div class="bg-[#fef3c7] border-2 border-[#2b1d12] rounded p-2 font-mono-print">
+                        <div class="flex justify-between items-center text-[11px] font-bold">
+                            <span>Budget Pembeli:</span>
+                            <span id="budget-target-text" class="text-[#15803d] text-xs font-extrabold">Rp 20.000</span>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold mt-0.5">
+                            <span>Total Racikanmu:</span>
+                            <span id="budget-current-text" class="text-[#2b1d12]">Rp 0</span>
+                        </div>
+                        <div id="budget-craving-badge" class="mt-1 px-2 py-0.5 rounded bg-[#faf6eb] border border-[#2b1d12] text-[10px] font-bold text-[#7c2d12]">
+                            Syarat: Wajib ada 🦐 Udang Segar!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODE C: SELF-SERVE PRASMANAN + SPICE TOLERANCE + JUMAT BERKAH (Suite 4) -->
+                <div id="prasmanan-order-section" class="hidden mb-1.5">
+                    <div class="bg-[#dcfce7] border-2 border-[#2b1d12] rounded p-2 font-mono-print">
+                        <div class="flex justify-between items-center gap-1">
+                            <span class="text-[10px] font-extrabold text-[#14532d] uppercase">🥗 Prasmanan</span>
+                            <button id="btn-jumat-berkah" onclick="toggleJumatBerkah()" class="text-[9px] font-bold bg-[#e59819] text-[#2b1d12] border border-[#2b1d12] px-1.5 py-0.5 rounded">
+                                🏷️ Promo Jumat Berkah 50%
+                            </button>
+                        </div>
+                        <div id="prasmanan-craving-text" class="text-[10px] font-bold text-[#14532d] mt-1">
+                            Ngidam hari ini: Seblak Seafood!
+                        </div>
+                        <!-- Spice Tolerance Bar -->
+                        <div class="mt-1.5">
+                            <div class="flex justify-between text-[9px] font-bold text-[#7c2d12]">
+                                <span>🌶️ Level Kepedasanmu:</span>
+                                <span id="spice-level-text">Aman (0%)</span>
+                            </div>
+                            <div class="w-full h-2 bg-white border border-[#2b1d12] rounded-sm overflow-hidden mt-0.5">
+                                <div id="spice-meter-bar" class="h-full bg-[#dc2626] transition-all" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold mt-1.5 pt-1 border-t border-[#2b1d12]/30">
+                            <span>Total Mangkukmu:</span>
+                            <span id="prasmanan-total-text" class="text-[#c83e2b] font-extrabold">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suite 3: Side Dish / Drink Add-On Order -->
+                <div id="side-drink-section" class="hidden bg-[#e0f2fe] border-2 border-[#2b1d12] rounded p-1.5 mb-1.5">
+                    <div class="flex items-center justify-between gap-1 font-mono-print text-[10px] font-bold">
+                        <span id="side-drink-label" class="text-[#0369a1]">🥤 Tambahan: Es Teh Manis</span>
+                        <button id="btn-prep-drink" onclick="prepareSideDrink()" class="bg-[#0284c7] text-white px-2 py-0.5 rounded border border-[#2b1d12] font-bold">
+                            Siapkan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ringkasan Isi Wajan (Tap = Balikin -1) -->
+                <div class="bg-[#e8cfa6] border-2 border-[#2b1d12] rounded p-1.5">
+                    <div class="flex justify-between items-center font-mono-print text-[10px] font-bold uppercase mb-1">
+                        <span>Isi Wajan (Tap = Balikin):</span>
+                        <span id="wok-count-badge" class="bg-[#2b1d12] text-[#faf6eb] px-1.5 py-0.5 rounded-sm">0 takaran</span>
+                    </div>
+                    <div id="wok-current-list" class="font-mono-print text-[10px] leading-snug text-[#2b1d12] max-h-16 overflow-y-auto">
+                        Masih kosong. Klik wadah di gerobak!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- COOKING STATION CONTROLS -->
+    <div id="cooking-controls" class="fixed bottom-0 left-0 right-0 z-20 safe-bottom flex flex-col items-center pointer-events-none">
+        <!-- Wooden Ingredient Tray with Stock & Price Tags -->
+        <div class="wood-tray p-1.5 rounded-lg mb-1.5 pointer-events-auto max-w-full overflow-x-auto">
+            <div class="flex items-center gap-1.5" id="quick-ingredient-bar"></div>
+        </div>
+
+        <!-- Primary Action Buttons -->
+        <div class="flex items-center justify-center gap-2 w-full max-w-md pointer-events-auto">
+            <button onclick="resetWok()" class="btn-tactile tap-target bg-[#c83e2b] text-[#faf6eb] font-display font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-1 shrink-0">
+                <span>🗑️</span> <span>Kosongkan</span>
+            </button>
+            <button id="btn-cook-serve" onclick="startStoveMinigame()" class="btn-tactile tap-target flex-1 sm:flex-initial bg-[#2d6a4f] text-[#faf6eb] font-display font-bold px-4 py-2 rounded-lg text-xs sm:text-base flex items-center justify-center gap-1.5">
+                <span>🔥</span> <span id="btn-cook-label">Nyalakan Kompor</span>
+                <kbd class="hidden lg:inline-block font-mono-print text-[10px] bg-[#1b4332] px-1.5 py-0.5 rounded border border-[#faf6eb]/30 ml-1">Enter</kbd>
+            </button>
+        </div>
+    </div>
+
+    <!-- CASHIER REGISTER PANEL (TUNAI + UV SCANNER + KASBON + QRIS) -->
+    <div id="cashier-panel" class="hidden fixed bottom-0 left-0 right-0 z-30 safe-bottom flex justify-center pointer-events-none">
+        <div class="wood-tray w-full max-w-3xl rounded-xl p-2.5 sm:p-3.5 pointer-events-auto animate-stamp">
+            <!-- Retro LCD Display -->
+            <div class="lcd-screen rounded-lg p-2 mb-2 grid grid-cols-3 gap-1.5 text-center">
+                <div>
+                    <div id="lcd-col1-label" class="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#86efac]/70 font-mono-print">Total Belanja</div>
+                    <div id="cash-total" class="font-lcd text-sm sm:text-xl text-[#fde047]">Rp 0</div>
+                </div>
+                <div class="border-x border-[#4ade80]/25">
+                    <div id="lcd-col2-label" class="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#86efac]/70 font-mono-print">Uang Pembeli</div>
+                    <div id="cash-paid" class="font-lcd text-sm sm:text-xl text-[#38bdf8]">Rp 0</div>
+                </div>
+                <div>
+                    <div id="lcd-col3-label" class="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#86efac]/70 font-mono-print">Kembalianmu</div>
+                    <div id="cash-prepared" class="font-lcd text-sm sm:text-xl text-[#4ade80]">Rp 0</div>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW A: TUNAI KEMBALIAN + UV COUNTERFEIT CHECK + KASBON -->
+            <div id="cashier-tunai-view">
+                <!-- Suite 2: UV Lamp Bill Inspector Bar -->
+                <div id="uv-inspector-bar" class="bg-[#1e1b4b] border-2 border-[#4f46e5] rounded-lg px-2.5 py-1.5 mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">🔦</span>
+                        <div class="font-mono-print text-[10px] sm:text-xs text-indigo-100">
+                            <span id="uv-status-text">Cek keaslian uang pembeli sebelum kasih kembalian!</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="scanBillWithUV()" class="btn-tactile bg-[#6366f1] text-white font-display font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded">
+                            🔦 Cek Lampu UV
+                        </button>
+                        <button id="btn-reject-fake" onclick="rejectFakeBill()" class="hidden btn-tactile bg-[#dc2626] text-white font-display font-extrabold text-[10px] sm:text-xs px-2.5 py-1 rounded">
+                            🚫 Tolak Uang Palsu!
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stacked Change Tray -->
+                <div class="bg-[#2b1d12] border-2 border-[#1a0f08] rounded-lg px-2 py-1 mb-2 flex items-center justify-between gap-2 min-h-[34px]">
+                    <span class="font-mono-print text-[10px] text-[#e8cfa6] shrink-0">Kembalian:</span>
+                    <div id="change-stack-preview" class="flex items-center gap-1.5 overflow-x-auto py-0.5 flex-1">
+                        <span class="font-mono-print text-[10px] text-[#a88b68] italic">Tap pecahan uang...</span>
+                    </div>
+                    <button onclick="resetChange()" class="font-mono-print text-[10px] font-bold bg-[#c83e2b] text-[#faf6eb] px-2 py-0.5 rounded border border-[#1a0f08] shrink-0">
+                        Reset
+                    </button>
+                </div>
+
+                <!-- Rupiah Banknotes & Coins -->
+                <div class="grid grid-cols-3 sm:grid-cols-7 gap-1.5 mb-2">
+                    <button onclick="addChange(50000)" class="uang-kertas tap-target bg-[#2563eb] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">50.000</div>
+                    </button>
+                    <button onclick="addChange(20000)" class="uang-kertas tap-target bg-[#15803d] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">20.000</div>
+                    </button>
+                    <button onclick="addChange(10000)" class="uang-kertas tap-target bg-[#6d28d9] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">10.000</div>
+                    </button>
+                    <button onclick="addChange(5000)" class="uang-kertas tap-target bg-[#b45309] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">5.000</div>
+                    </button>
+                    <button onclick="addChange(2000)" class="uang-kertas tap-target bg-[#475569] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">2.000</div>
+                    </button>
+                    <button onclick="addChange(1000)" class="uang-kertas tap-target bg-[#4d7c0f] text-white p-1.5 text-center flex flex-col justify-center">
+                        <div class="text-[8px] font-mono-print opacity-85">INDONESIA</div>
+                        <div class="font-display font-bold text-xs sm:text-sm">1.000</div>
+                    </button>
+                    <button onclick="addChange(500)" class="uang-koin tap-target col-span-3 sm:col-span-1 p-1.5 text-center flex flex-row sm:flex-col items-center justify-center gap-1.5 sm:gap-0">
+                        <div class="text-[8px] font-mono-print font-bold">KOIN</div>
+                        <div class="font-display font-extrabold text-xs sm:text-sm">Rp 500</div>
+                    </button>
+                </div>
+
+                <!-- Action Row: Catat Kasbon (if neighbor asks) OR Submit Change -->
+                <div class="flex items-center justify-between gap-2">
+                    <button id="btn-accept-kasbon" onclick="acceptCustomerKasbon()" class="hidden btn-tactile tap-target bg-[#fef08a] text-[#2b1d12] font-display font-extrabold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1">
+                        <span>📒</span> <span>Catat Buku Kasbon (+20% Besok)</span>
+                    </button>
+                    <button id="btn-submit-cash" onclick="submitChange()" class="btn-tactile tap-target w-full sm:w-auto ml-auto bg-[#e59819] text-[#2b1d12] font-display font-extrabold px-5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2">
+                        <span>🤝</span> <span>Serahkan Kembalian</span>
+                        <kbd class="hidden lg:inline-block font-mono-print text-[10px] bg-[#2b1d12]/15 px-1.5 py-0.5 rounded border border-[#2b1d12]/30">Enter</kbd>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW B: QRIS / ONLINE PAYMENT & PRASMANAN CHECKOUT -->
+            <div id="cashier-online-view" class="hidden">
+                <div class="enamel-card rounded-lg p-2.5 mb-2 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-12 h-12 bg-white border-2 border-[#2b1d12] rounded p-1 flex flex-col items-center justify-center shrink-0">
+                            <div class="text-[7px] font-extrabold tracking-widest text-[#c83e2b]">QRIS</div>
+                            <div class="grid grid-cols-3 gap-0.5 w-7 h-7 mt-0.5">
+                                <div class="bg-[#2b1d12]"></div><div class="bg-transparent"></div><div class="bg-[#2b1d12]"></div>
+                                <div class="bg-transparent"></div><div class="bg-[#2b1d12]"></div><div class="bg-transparent"></div>
+                                <div class="bg-[#2b1d12]"></div><div class="bg-[#2b1d12]"></div><div class="bg-transparent"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div id="qris-title" class="font-display font-extrabold text-xs sm:text-sm text-[#2b1d12]">Pembayaran Digital Masuk!</div>
+                            <p id="qris-desc" class="font-mono-print text-[10px] sm:text-[11px] text-[#5c3a21] mt-0.5">
+                                Saldo OjolPay / QRIS otomatis terverifikasi tanpa uang kembalian.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-buy-cooling-drink" onclick="buyCoolingDrinkInPrasmanan()" class="hidden btn-tactile tap-target bg-[#0284c7] text-white font-display font-bold py-2 px-3 rounded-lg text-xs">
+                        🧊 Beli Es Teh (Rp 3.000 - Redakan Pedas)
+                    </button>
+                    <button onclick="confirmOnlinePayment()" class="btn-tactile tap-target flex-1 bg-[#2d6a4f] text-[#faf6eb] font-display font-extrabold py-2 px-4 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2">
+                        <span>📱</span> <span id="btn-qris-label">Konfirmasi Pembayaran QRIS</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUITE 1: MARKET RESTOCK MODAL (BELANJA STOK PASAR) -->
+    <div id="market-modal" class="hidden fixed inset-0 z-50 bg-[#120a05]/85 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-lg w-full rounded-xl p-4 sm:p-5 animate-stamp max-h-[90dvh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-2 mb-3">
+                <div>
+                    <h2 class="font-display font-extrabold text-base sm:text-lg uppercase">🛒 Belanja Stok Bahan Pasar</h2>
+                    <p class="font-mono-print text-[11px] text-[#5c3a21]">Harga pasar berubah tiap hari! Isi ulang baskom yang menipis.</p>
+                </div>
+                <button onclick="closeModal('market-modal')" class="btn-tactile bg-[#c83e2b] text-white font-bold px-2.5 py-1 rounded text-xs">✕</button>
+            </div>
+            <div id="market-items-list" class="space-y-2 mb-3"></div>
+            <button onclick="closeModal('market-modal')" class="btn-tactile tap-target w-full bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2 rounded-lg text-sm">
+                Selesai Belanja
+            </button>
+        </div>
+    </div>
+
+    <!-- SUITE 1: BANK KELILING RESCUE LOAN MODAL (PENYELAMAT KAS MINUS) -->
+    <div id="bank-keliling-modal" class="hidden fixed inset-0 z-50 bg-[#120a05]/90 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-md w-full rounded-xl p-5 animate-stamp text-center">
+            <div class="text-4xl mb-1">💼🛵</div>
+            <h2 class="font-display font-extrabold text-lg uppercase text-[#c83e2b]">Abang Bank Keliling Datang!</h2>
+            <p class="font-mono-print text-xs text-[#2b1d12] mt-2">
+                "Waduh kas warungmu minus dalam banget Bang! Mau ambil suntikan modal darurat <strong>Rp 50.000</strong>? Cicilan otomatis Rp 12.000 tiap tutup hari."
+            </p>
+            <div class="grid grid-cols-2 gap-2.5 mt-4">
+                <button onclick="takeBankKelilingLoan()" class="btn-tactile tap-target bg-[#2d6a4f] text-white font-display font-extrabold py-2.5 rounded-lg text-xs">
+                    Ambil Modal Rp 50.000
+                </button>
+                <button onclick="closeModal('bank-keliling-modal')" class="btn-tactile tap-target bg-[#e59819] text-[#2b1d12] font-display font-bold py-2.5 rounded-lg text-xs">
+                    Nanti Dulu Bang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUITE 2: BUKU KASBON MODAL -->
+    <div id="kasbon-modal" class="hidden fixed inset-0 z-50 bg-[#120a05]/85 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-md w-full rounded-xl p-4 sm:p-5 animate-stamp max-h-[85dvh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-2 mb-3">
+                <div>
+                    <h2 class="font-display font-extrabold text-base sm:text-lg uppercase">📒 Buku Kasbon Tetangga</h2>
+                    <p class="font-mono-print text-[11px] text-[#5c3a21]">Catatan pembeli ngutang (dibayar lunas saat Tutup Hari + bunga 20%).</p>
+                </div>
+                <button onclick="closeModal('kasbon-modal')" class="btn-tactile bg-[#c83e2b] text-white font-bold px-2.5 py-1 rounded text-xs">✕</button>
+            </div>
+            <div id="kasbon-list-container" class="space-y-2 mb-3 font-mono-print text-xs"></div>
+            <button onclick="closeModal('kasbon-modal')" class="btn-tactile tap-target w-full bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2 rounded-lg text-sm">
+                Tutup Buku
+            </button>
+        </div>
+    </div>
+
+    <!-- SUITE 3: 3D GEROBAK DECORATION & RADIO MODAL -->
+    <div id="decor-modal" class="hidden fixed inset-0 z-50 bg-[#120a05]/85 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-md w-full rounded-xl p-4 sm:p-5 animate-stamp max-h-[90dvh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-2 mb-3">
+                <h2 class="font-display font-extrabold text-base sm:text-lg uppercase">🎨 Kustom Gerobak 3D & Radio</h2>
+                <button onclick="closeModal('decor-modal')" class="btn-tactile bg-[#c83e2b] text-white font-bold px-2.5 py-1 rounded text-xs">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs font-mono-print">
+                <div>
+                    <label class="font-bold block mb-1">Tulisan Spanduk Gerobak 3D:</label>
+                    <div class="flex gap-1.5">
+                        <input id="input-banner-text" type="text" maxlength="24" value="SEBLAK SEAFOOD JURAGAN" class="flex-1 bg-white border-2 border-[#2b1d12] rounded px-2 py-1.5 font-bold uppercase text-[#2b1d12]">
+                        <button onclick="applyBannerText()" class="btn-tactile bg-[#2d6a4f] text-white font-display font-bold px-3 py-1.5 rounded">Pasang</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-bold block mb-1">Warna Kain Spanduk:</label>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="setBannerColor('#c83e2b')" class="btn-tactile bg-[#c83e2b] text-white py-1.5 rounded font-bold">Merah</button>
+                        <button onclick="setBannerColor('#e59819')" class="btn-tactile bg-[#e59819] text-[#2b1d12] py-1.5 rounded font-bold">Kuning</button>
+                        <button onclick="setBannerColor('#2d6a4f')" class="btn-tactile bg-[#2d6a4f] text-white py-1.5 rounded font-bold">Hijau</button>
+                        <button onclick="setBannerColor('#1d4ed8')" class="btn-tactile bg-[#1d4ed8] text-white py-1.5 rounded font-bold">Biru</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 pt-1">
+                    <button onclick="toggleDecorProp('fairyLights')" id="btn-toggle-lights" class="btn-tactile bg-[#fef08a] text-[#2b1d12] font-display font-bold py-2 px-3 rounded flex justify-between items-center">
+                        <span>✨ Lampu Kelap-Kelip Malam</span>
+                        <span id="status-fairyLights">AKTIF</span>
+                    </button>
+                    <button onclick="toggleDecorProp('fan')" id="btn-toggle-fan" class="btn-tactile bg-[#faf6eb] text-[#2b1d12] font-display font-bold py-2 px-3 rounded flex justify-between items-center">
+                        <span>🌀 Kipas Angin Meja 3D</span>
+                        <span id="status-fan">AKTIF</span>
+                    </button>
+                    <button onclick="toggleWarungRadio()" id="btn-toggle-radio" class="btn-tactile bg-[#faf6eb] text-[#2b1d12] font-display font-bold py-2 px-3 rounded flex justify-between items-center">
+                        <span>📻 Radio Musik Warung</span>
+                        <span id="status-radio">MATI</span>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="closeModal('decor-modal')" class="btn-tactile tap-target w-full mt-4 bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2 rounded-lg text-sm">
+                Simpan & Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- UPGRADE WARUNG & HIRE ASSISTANT MODAL -->
+    <div id="upgrade-modal" class="hidden fixed inset-0 z-50 bg-[#120a05]/85 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-lg w-full rounded-xl p-4 sm:p-5 animate-stamp max-h-[90dvh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-[#2b1d12] pb-2 mb-3">
+                <div>
+                    <h2 class="font-display font-extrabold text-base sm:text-lg uppercase">🛠️ Upgrade Alat & Rekrut Asisten</h2>
+                    <p id="upgrade-tier-subtitle" class="font-mono-print text-[11px] text-[#5c3a21]">Status: Lv.1 Gerobak Kaki Lima</p>
+                </div>
+                <button onclick="closeModal('upgrade-modal')" class="btn-tactile bg-[#c83e2b] text-white font-bold px-2.5 py-1 rounded text-xs">✕</button>
+            </div>
+            <div id="upgrade-list" class="space-y-2 mb-3"></div>
+            <button onclick="closeModal('upgrade-modal')" class="btn-tactile tap-target w-full bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2 rounded-lg text-sm">
+                Kembali Jualan
+            </button>
+        </div>
+    </div>
+
+    <!-- STAMP FEEDBACK BANNER -->
+    <div id="feedback-banner" class="hidden fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none">
+        <div class="enamel-card px-5 py-3.5 rounded-xl text-center animate-stamp max-w-sm">
+            <div id="feedback-emoji" class="text-3xl mb-1">🤤</div>
+            <div id="feedback-title" class="text-base sm:text-lg font-extrabold font-display uppercase text-[#2b1d12]">Mantap Juragan!</div>
+            <div id="feedback-desc" class="font-mono-print text-xs font-bold text-[#5c3a21] mt-1">Takaran pas dan kembalian akurat!</div>
+        </div>
+    </div>
+
+    <!-- START / TUTORIAL MODAL -->
+    <div id="tutorial-modal" class="fixed inset-0 z-50 bg-[#120a05]/85 flex items-center justify-center p-4">
+        <div class="enamel-card max-w-lg w-full rounded-xl p-4 sm:p-6 animate-stamp max-h-[92dvh] overflow-y-auto">
+            <div class="bg-[#c83e2b] text-[#faf6eb] border-2 border-[#2b1d12] rounded-lg p-3 text-center mb-3.5 shadow-[3px_3px_0px_#2b1d12]">
+                <div class="text-[11px] font-mono-print uppercase tracking-widest text-[#fde047] font-bold">Simulasi Warung Kaki Lima 3D Lengkap</div>
+                <h2 class="text-xl sm:text-2xl font-extrabold font-display tracking-tight mt-0.5">SEBLAK SEAFOOD JURAGAN</h2>
+            </div>
+
+            <div class="bg-[#f3dfb9] border-2 border-[#2b1d12] rounded-lg p-3 space-y-2 text-xs mb-3.5">
+                <div class="flex items-start gap-2">
+                    <span class="bg-[#e59819] text-[#2b1d12] font-display font-extrabold w-5 h-5 rounded border-2 border-[#2b1d12] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <div>
+                        <strong class="font-display">Stok Pasar, Kompor Api & Balikin Bahan:</strong>
+                        <p class="text-[#4a321f]">Pantau stok baskom lewat <strong>🛒 Stok</strong>, atur api kompor & aduk irus agar tidak gosong, serta tap bahan di wajan untuk dibalikin (-1).</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="bg-[#2d6a4f] text-[#faf6eb] font-display font-extrabold w-5 h-5 rounded border-2 border-[#2b1d12] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <div>
+                        <strong class="font-display">Vlogger VIP, Pengamen, Kasbon & Lampu UV:</strong>
+                        <p class="text-[#4a321f]">Layani Food Vlogger demi <strong>FYP 2X Tip</strong>, catat <strong>📒 Kasbon</strong> tetangga, dan cek uang pembeli pakai <strong>🔦 Lampu UV</strong> biar tidak tertipu uang palsu!</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="bg-[#c83e2b] text-[#faf6eb] font-display font-extrabold w-5 h-5 rounded border-2 border-[#2b1d12] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <div>
+                        <strong class="font-display">Dekor Gerobak 3D, Asisten & Mode Prasmanan:</strong>
+                        <p class="text-[#4a321f]">Ganti tulisan spanduk 3D, nyalakan radio warung, rekrut asisten, atau main jadi pembeli di <strong>Mode Prasmanan</strong>!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button onclick="startGame('JURAGAN')" class="btn-tactile tap-target w-full bg-[#e59819] text-[#2b1d12] font-display font-extrabold py-2.5 px-4 rounded-lg text-xs sm:text-sm uppercase tracking-wide flex items-center justify-center gap-1.5">
+                    <span>👨‍🍳</span> <span>Main Jadi Juragan</span>
+                </button>
+                <button onclick="startGame('PRASMANAN')" class="btn-tactile tap-target w-full bg-[#2d6a4f] text-[#faf6eb] font-display font-extrabold py-2.5 px-4 rounded-lg text-xs sm:text-sm uppercase tracking-wide flex items-center justify-center gap-1.5">
+                    <span>🥗</span> <span>Jadi Pembeli Prasmanan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * SEBLAK SEAFOOD JURAGAN 3D - COMPLETE UNBROKEN SINGLE-FILE EDITION
+         * ============================================================================
+         */
+
+        const INGREDIENTS = [
+            { id: 'kerupuk', name: 'Kerupuk',     price: 3000, marketBase: 1200, color: 0xfbbf24, icon: '🍘' },
+            { id: 'mie',     name: 'Mie Kuning',  price: 3000, marketBase: 1200, color: 0xfde047, icon: '🍜' },
+            { id: 'udang',   name: 'Udang Segar', price: 6000, marketBase: 2800, color: 0xfb7185, icon: '🦐' },
+            { id: 'cumi',    name: 'Cumi Ring',   price: 6000, marketBase: 2800, color: 0xf8fafc, icon: '🦑' },
+            { id: 'bakso',   name: 'Bakso Ikan',  price: 4000, marketBase: 1800, color: 0xfed7aa, icon: '🍡' },
+            { id: 'sawi',    name: 'Sawi Hijau',  price: 2000, marketBase: 800,  color: 0x22c55e, icon: '🥬' },
+            { id: 'cabai',   name: 'Sambal Ulek', price: 1000, marketBase: 500,  color: 0xdc2626, icon: '🌶️' }
+        ];
+
+        const SIDE_DRINKS = [
+            { id: 'esteh',   name: 'Es Teh Manis',   price: 3000, icon: '🧊' },
+            { id: 'esjeruk', name: 'Es Jeruk Segar', price: 4000, icon: '🍊' },
+            { id: 'kerupukkaleng', name: 'Kerupuk Kaleng', price: 2000, icon: '🥫' }
+        ];
+
+        const WARUNG_TIERS = [
+            'Gerobak Kaki Lima',
+            'Warung Tenda Ramai',
+            'Kedai Seblak Juragan',
+            'Resto Seblak Sultan'
+        ];
+
+        const CUSTOMERS_DATA = [
+            { name: 'Mas Budi',   avatar: '🧑', shape: 'box',    shirt: 0x2563eb, skin: 0xd99b72, hat: 'cap',    glasses: false, quote: '"Udangnya jangan pelit Bang!"' },
+            { name: 'Neng Siti',  avatar: '👩', shape: 'round',  shirt: 0xdb2777, skin: 0xe6b08a, hat: 'hijab',  glasses: false, quote: '"Kuahnya yang medok ya Bang!"' },
+            { name: 'Bang Jago',  avatar: '🧔', shape: 'tall',   shirt: 0x15803d, skin: 0xc6865c, hat: 'none',   glasses: true,  quote: '"Pedesnya nampol biar melek!"' },
+            { name: 'Teh Rina',   avatar: '🧕', shape: 'round',  shirt: 0x7c3aed, skin: 0xe8b896, hat: 'hijab',  glasses: true,  quote: '"Kerupuknya yang kenyal ya A!"' },
+            { name: 'Pak RT',     avatar: '👴', shape: 'box',    shirt: 0xb45309, skin: 0xd1946b, hat: 'peci',   glasses: true,  quote: '"Jangan terlalu pedes, lambung Pak RT!"' },
+            { name: 'Dek Dinda',  avatar: '👧', shape: 'chubby', shirt: 0x0284c7, skin: 0xebb998, hat: 'none',   glasses: false, quote: '"Cumi sama baksonya pasin ya Bang!"' },
+            { name: 'Bang Ojol',  avatar: '🛵', shape: 'box',    shirt: 0x16a34a, skin: 0xd1946b, hat: 'helmet', glasses: false, quote: '"Orderan aplikasi Bang, ditunggu customer!"' },
+            { name: 'Kak Vlogger',avatar: '🤳', shape: 'tall',   shirt: 0x9333ea, skin: 0xe8b896, hat: 'cap',    glasses: true,  isVip: true, quote: '"Halo guys! Kita review seblak viral ini!"' }
+        ];
+
+        const UPGRADES_CONFIG = [
+            { id: 'stove',     name: 'Kompor Turbo',        icon: '🔥', desc: 'Masak lebih stabil & bonus Rp 1.000 tiap porsi matang pas.', baseCost: 20000, maxLv: 4 },
+            { id: 'wok',       name: 'Wajan Sultan Baja',   icon: '🍳', desc: 'Aroma mantap (+Rp 1.500 tip pelanggan & toleransi takaran luas).', baseCost: 25000, maxLv: 4 },
+            { id: 'stock',     name: 'Kulkas Stok Premium', icon: '🧊', desc: 'Kapasitas stok baskom lebih banyak & nilai jual +Rp 500/topping.', baseCost: 22000, maxLv: 4 },
+            { id: 'tablet',    name: 'Tablet Ojol & QRIS',  icon: '📱', desc: 'Orderan Ojol lebih sering masuk dengan waktu & komisi lebih besar.', baseCost: 15000, maxLv: 3 },
+            { id: 'assistant', name: 'Asisten Ujang',       icon: '🧑‍🍳', desc: 'Ujang otomatis menyiapkan pesanan Es Teh / Es Jeruk pembeli!', baseCost: 28000, maxLv: 2 }
+        ];
+
+        const QUEST_TEMPLATES = [
+            { id: 'serve_clean',  title: 'Layani 3 Pembeli Tanpa Salah',    target: 3, rewardMoney: 15000, rewardXp: 50 },
+            { id: 'budget_ok',    title: 'Selesaikan 1 Pesanan Budget Pas', target: 1, rewardMoney: 12000, rewardXp: 45 },
+            { id: 'online_ok',    title: 'Selesaikan 2 Order Ojol QRIS',    target: 2, rewardMoney: 18000, rewardXp: 60 },
+            { id: 'seafood_use',  title: 'Masak 5 Takaran Udang / Cumi',    target: 5, rewardMoney: 14000, rewardXp: 45 },
+            { id: 'prasmanan_ok', title: 'Belanja Prasmanan Hemat 1x',      target: 1, rewardMoney: 10000, rewardXp: 40 }
+        ];
+
+        // --- GAME STATE ---
+        const gameState = {
+            started: false,
+            playMode: 'JURAGAN',
+            phase: 'COOK', // 'COOK', 'STOVE_MINIGAME', 'CASHIER'
+            cameraMode: 'COOK',
+            notaCollapsed: false,
+            customerNumber: 1,
+            day: 1,
+            money: 30000,
+            buyerWallet: 35000,
+            bankDebt: 0,
+            level: 1,
+            xp: 0,
+            xpToNext: 100,
+            reputation: 5,
+            fypOrdersLeft: 0,
+            audioEnabled: true,
+            radioPlaying: false,
+            radioInterval: null,
+
+            // Suite 1: Inventory & Market Prices
+            stock: { kerupuk: 8, mie: 8, udang: 6, cumi: 6, bakso: 7, sawi: 8, cabai: 10 },
+            marketPrices: {},
+
+            // Suite 1: Stove Minigame
+            stoveHeat: 'MED',
+            doneness: 0,
+            stoveInterval: null,
+
+            // Suite 2: Street Events, Kasbon & UV Counterfeit Check
+            activeStreetEvent: null,
+            kasbonList: [],
+            wantsKasbon: false,
+            isFakeBill: false,
+            uvChecked: false,
+
+            // Suite 3: 3D Decor & Upgrades
+            bannerText: 'SEBLAK SEAFOOD JURAGAN',
+            bannerColor: '#c83e2b',
+            decor: { fairyLights: true, fan: true },
+            upgrades: { stove: 1, wok: 1, stock: 1, tablet: 1, assistant: 1 },
+            quests: [],
+
+            // Suite 4: Prasmanan Extras
+            jumatBerkahActive: false,
+
+            // Current Order
+            currentCustomer: null,
+            orderMode: 'EXACT', // 'EXACT', 'BUDGET', 'ONLINE', 'PRASMANAN'
+            order: {},
+            sideDrink: null,
+            sideDrinkPrepared: false,
+            budgetTarget: 0,
+            budgetCravingId: null,
+            prasmananCravingId: null,
+            onlineTimer: 0,
+            onlineTimerInterval: null,
+
+            wokContents: {},
+            portionAccuracy: 1.0,
+            orderPassed: true,
+            donenessGrade: 'PERFECT',
+
+            totalBill: 0,
+            customerPaid: 0,
+            preparedChange: 0,
+            selectedBills: []
+        };
+
+        // --- PROCEDURAL WARUNG SOUND & RADIO (WEB AUDIO API) ---
+        class SoundFX {
+            constructor() { this.ctx = null; }
+            init() {
+                try {
+                    if (!this.ctx) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (!AudioContext) return;
+                        this.ctx = new AudioContext();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume().catch(() => {});
+                    }
+                } catch (e) {}
+            }
+            playTone(freq, type, duration, vol = 0.14, slideFreq = null) {
+                if (!gameState.audioEnabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, this.ctx.currentTime + duration);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+            playSizzle() {
+                if (!gameState.audioEnabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const bufferSize = Math.floor(this.ctx.sampleRate * 0.2);
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 1850;
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    noise.start();
+                } catch (e) {}
+                this.playTone(290, 'sine', 0.1, 0.13, 520);
+            }
+            playPaperSnap() { this.playTone(620, 'triangle', 0.06, 0.1, 940); }
+            playCoin() {
+                this.playTone(1350, 'sine', 0.07, 0.12);
+                setTimeout(() => this.playTone(1820, 'sine', 0.13, 0.12), 55);
+            }
+            playChaChing() {
+                this.playTone(1046.5, 'triangle', 0.09, 0.2);
+                setTimeout(() => this.playTone(1396.9, 'triangle', 0.32, 0.22), 85);
+            }
+            playSuccess() {
+                [523.25, 659.25, 783.99, 1046.50].forEach((n, idx) => {
+                    setTimeout(() => this.playTone(n, 'triangle', 0.16, 0.15), idx * 75);
+                });
+            }
+            playError() {
+                this.playTone(210, 'sawtooth', 0.16, 0.12, 145);
+                setTimeout(() => this.playTone(170, 'sawtooth', 0.22, 0.12, 115), 150);
+            }
+        }
+        const sfx = new SoundFX();
+
+        function toggleAudio() {
+            gameState.audioEnabled = !gameState.audioEnabled;
+            document.getElementById('btn-audio').textContent = gameState.audioEnabled ? '🔊' : '🔇';
+            if (gameState.audioEnabled) sfx.playPaperSnap();
+        }
+
+        function toggleWarungRadio() {
+            gameState.radioPlaying = !gameState.radioPlaying;
+            document.getElementById('status-radio').textContent = gameState.radioPlaying ? 'NYALA' : 'MATI';
+            if (gameState.radioInterval) {
+                clearInterval(gameState.radioInterval);
+                gameState.radioInterval = null;
+            }
+            if (gameState.radioPlaying) {
+                const melody = [392, 440, 523.25, 587.33, 659.25, 587.33, 523.25, 440];
+                let step = 0;
+                gameState.radioInterval = setInterval(() => {
+                    if (!gameState.radioPlaying || !gameState.audioEnabled) return;
+                    sfx.playTone(melody[step % melody.length], 'triangle', 0.24, 0.06);
+                    step++;
+                }, 420);
+            }
+        }
+
+        // --- THREE.JS 3D SCENE ---
+        let scene, camera, renderer, raycaster, mouse;
+        let ingredientMeshes = [];
+        let bowlGroupsById = {};
+        let wokFoodGroup, brothMesh, stoveFlameMesh, ladleGroup;
+        let servingBowlGroup, servedFoodGroup, takeawayBoxGroup;
+        let cashDrawerMesh, customerPaymentBillMesh;
+        let customerGroup, hangingBulbGroup, bulbLight;
+        let bannerMesh, fairyLightsGroup, fanBladesGroup, assistantMesh;
+        let steamParticles = [], flyingItems = [];
+
+        const CAM_TARGETS_DESKTOP = {
+            COOK:    { pos: new THREE.Vector3(-0.15, 3.65, 3.45), look: new THREE.Vector3(-0.15, 1.15, -0.15) },
+            CASHIER: { pos: new THREE.Vector3(1.85, 2.65, 2.35),  look: new THREE.Vector3(1.55, 1.15, -0.25) }
+        };
+        const CAM_TARGETS_PORTRAIT = {
+            COOK:    { pos: new THREE.Vector3(-0.20, 4.75, 4.95), look: new THREE.Vector3(-0.20, 1.10, -0.15) },
+            CASHIER: { pos: new THREE.Vector3(1.65, 3.35, 3.35),  look: new THREE.Vector3(1.55, 1.05, -0.20) }
+        };
+
+        function getActiveCameraTarget(mode) {
+            const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+            const table = aspect < 0.95 ? CAM_TARGETS_PORTRAIT : CAM_TARGETS_DESKTOP;
+            return table[mode] || table.COOK;
+        }
+
+        let currentCamPos = new THREE.Vector3(-0.15, 3.65, 3.45);
+        let currentCamLook = new THREE.Vector3(-0.15, 1.15, -0.15);
+        let userOrbitOffset = { theta: 0, phi: 0 };
+        let isDragging = false;
+        let prevPointer = { x: 0, y: 0 };
+
+        function updateResponsiveCameraProjection() {
+            if (!camera || !renderer) return;
+            const container = document.getElementById('canvas-container');
+            const rect = container ? container.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+            const w = Math.max(1, Math.floor(rect.width || window.innerWidth || 360));
+            const h = Math.max(1, Math.floor(rect.height || window.innerHeight || 640));
+            const aspect = w / h;
+
+            camera.aspect = aspect;
+            camera.fov = aspect < 0.65 ? 58 : (aspect < 1.0 ? 52 : 46);
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+
+        function showRuntimeError(msg) {
+            const box = document.getElementById('runtime-error-box');
+            const label = document.getElementById('runtime-error-msg');
+            if (box && label) {
+                label.textContent = msg;
+                box.classList.remove('hidden');
+            }
+        }
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        }
+
+        function init3D() {
+            try {
+                if (typeof THREE === 'undefined') {
+                    showRuntimeError('Library 3D gagal dimuat. Periksa koneksi internet lalu muat ulang.');
+                    return false;
+                }
+
+                const container = document.getElementById('canvas-container');
+                const rect = container.getBoundingClientRect();
+                const initW = Math.max(1, Math.floor(rect.width || window.innerWidth || 360));
+                const initH = Math.max(1, Math.floor(rect.height || window.innerHeight || 640));
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x160f0a);
+                scene.fog = new THREE.FogExp2(0x160f0a, 0.042);
+
+                camera = new THREE.PerspectiveCamera(46, initW / initH, 0.1, 100);
+                const initialTarget = getActiveCameraTarget('COOK');
+                currentCamPos.copy(initialTarget.pos);
+                currentCamLook.copy(initialTarget.look);
+                camera.position.copy(currentCamPos);
+                camera.lookAt(currentCamLook);
+
+                const mobile = isMobileDevice();
+                try {
+                    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default', alpha: false });
+                } catch (glErr) {
+                    renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'default' });
+                }
+
+                renderer.domElement.id = 'game-canvas';
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
+                renderer.setSize(initW, initH, false);
+
+                try {
+                    renderer.shadowMap.enabled = true;
+                    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                } catch (e) {
+                    renderer.shadowMap.enabled = false;
+                }
+
+                container.innerHTML = '';
+                container.appendChild(renderer.domElement);
+                updateResponsiveCameraProjection();
+
+                raycaster = new THREE.Raycaster();
+                mouse = new THREE.Vector2();
+
+                setupLights(mobile);
+                buildWarungEnvironment();
+                buildCookingStation();
+                buildCashierCounter();
+                buildCustomerCharacter();
+
+                window.addEventListener('resize', onWindowResize);
+                window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 150));
+                window.addEventListener('keydown', onKeyDown);
+
+                const unlockAudioOnce = () => {
+                    sfx.init();
+                    window.removeEventListener('pointerdown', unlockAudioOnce);
+                    window.removeEventListener('touchstart', unlockAudioOnce);
+                };
+                window.addEventListener('pointerdown', unlockAudioOnce, { passive: true });
+                window.addEventListener('touchstart', unlockAudioOnce, { passive: true });
+
+                const dom = renderer.domElement;
+                dom.addEventListener('pointerdown', onPointerDown);
+                dom.addEventListener('pointermove', onPointerMove);
+                dom.addEventListener('pointerup', onPointerUp);
+                dom.addEventListener('pointercancel', onPointerUp);
+
+                renderer.render(scene, camera);
+                return true;
+            } catch (err) {
+                console.error('3D Init Error:', err);
+                showRuntimeError('Gagal menginisialisasi WebGL 3D: ' + (err && err.message ? err.message : 'Error WebGL'));
+                return false;
+            }
+        }
+
+        function setupLights(mobile = false) {
+            scene.add(new THREE.AmbientLight(0xffedd5, 0.6));
+
+            bulbLight = new THREE.PointLight(0xff9e2c, 1.55, 14);
+            bulbLight.position.set(0, 3.0, 0.25);
+            if (renderer && renderer.shadowMap && renderer.shadowMap.enabled) {
+                bulbLight.castShadow = true;
+                const shadowRes = mobile ? 1024 : 2048;
+                bulbLight.shadow.mapSize.width = shadowRes;
+                bulbLight.shadow.mapSize.height = shadowRes;
+                bulbLight.shadow.bias = -0.001;
+            }
+            scene.add(bulbLight);
+
+            const streetLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+            streetLight.position.set(-4, 5, -5);
+            scene.add(streetLight);
+
+            const fireLight = new THREE.PointLight(0xff4500, 0.95, 3.2);
+            fireLight.position.set(-1.1, 1.35, 0.1);
+            scene.add(fireLight);
+        }
+
+        function createSpandukTexture(text = 'SEBLAK SEAFOOD JURAGAN', clothHex = '#c83e2b') {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = clothHex;
+            ctx.fillRect(0, 0, 1024, 256);
+
+            ctx.fillStyle = '#faf6eb';
+            ctx.fillRect(24, 24, 976, 208);
+
+            ctx.strokeStyle = '#2b1d12';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(24, 24, 976, 208);
+
+            ctx.fillStyle = clothHex;
+            ctx.font = 'bold 68px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(text.toUpperCase(), 512, 118);
+
+            ctx.fillStyle = '#2d6a4f';
+            ctx.font = 'bold 34px sans-serif';
+            ctx.fillText('PRASMANAN • BUDGET • OJOL QRIS • PEDAS NAMPOL', 512, 182);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function buildWarungEnvironment() {
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(32, 32),
+                new THREE.MeshStandardMaterial({ color: 0x221f1d, roughness: 0.92 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const cartGroup = new THREE.Group();
+
+            const lowerBody = new THREE.Mesh(
+                new THREE.BoxGeometry(4.5, 1.0, 1.55),
+                new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.75 })
+            );
+            lowerBody.position.set(0.25, 0.5, 0);
+            lowerBody.castShadow = true;
+            lowerBody.receiveShadow = true;
+            cartGroup.add(lowerBody);
+
+            const trimStrip = new THREE.Mesh(
+                new THREE.BoxGeometry(4.54, 0.16, 1.58),
+                new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.5 })
+            );
+            trimStrip.position.set(0.25, 0.85, 0);
+            cartGroup.add(trimStrip);
+
+            const counterTop = new THREE.Mesh(
+                new THREE.BoxGeometry(4.65, 0.09, 1.68),
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.35, roughness: 0.35 })
+            );
+            counterTop.position.set(0.25, 1.045, 0);
+            counterTop.receiveShadow = true;
+            cartGroup.add(counterTop);
+
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3d2516 });
+            [[-1.9, -0.72], [2.4, -0.72], [-1.9, 0.72], [2.4, 0.72]].forEach(([px, pz]) => {
+                const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.25, 0.1), pillarMat);
+                pillar.position.set(px, 2.15, pz);
+                cartGroup.add(pillar);
+            });
+
+            // Glass showcase & Kerupuk Jars
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.22, roughness: 0.1 });
+            const etalaseGlass = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.75, 0.85), glassMat);
+            etalaseGlass.position.set(0.15, 1.46, -0.15);
+            cartGroup.add(etalaseGlass);
+
+            [-0.35, 0.15, 0.65].forEach((jx, idx) => {
+                const jar = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.16, 0.16, 0.34, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xfef3c7, transparent: true, opacity: 0.65 })
+                );
+                jar.position.set(jx, 2.02, -0.25);
+                cartGroup.add(jar);
+
+                const lid = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.17, 0.17, 0.05, 16),
+                    new THREE.MeshStandardMaterial({ color: idx % 2 === 0 ? 0xc83e2b : 0x2d6a4f })
+                );
+                lid.position.set(jx, 2.2, -0.25);
+                cartGroup.add(lid);
+            });
+
+            const roof = new THREE.Mesh(
+                new THREE.BoxGeometry(4.9, 0.16, 1.95),
+                new THREE.MeshStandardMaterial({ color: 0x3d2516, roughness: 0.7 })
+            );
+            roof.position.set(0.25, 3.32, 0);
+            roof.castShadow = true;
+            cartGroup.add(roof);
+
+            // Customizable Banner Mesh (Suite 3)
+            bannerMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(4.4, 0.72),
+                new THREE.MeshBasicMaterial({ map: createSpandukTexture(gameState.bannerText, gameState.bannerColor) })
+            );
+            bannerMesh.position.set(0.25, 2.88, -0.78);
+            bannerMesh.rotation.y = Math.PI;
+            cartGroup.add(bannerMesh);
+
+            // Twinkling Fairy Lights (Suite 3)
+            fairyLightsGroup = new THREE.Group();
+            const bulbColors = [0xfef08a, 0x4ade80, 0x38bdf8, 0xfb7185];
+            for (let i = 0; i < 11; i++) {
+                const lx = -1.8 + i * 0.41;
+                const fl = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.045, 8, 8),
+                    new THREE.MeshBasicMaterial({ color: bulbColors[i % bulbColors.length] })
+                );
+                fl.position.set(lx, 3.2, 0.86);
+                fairyLightsGroup.add(fl);
+            }
+            cartGroup.add(fairyLightsGroup);
+
+            // Standing Table Fan (Suite 3)
+            const fanGroup = new THREE.Group();
+            fanGroup.position.set(2.15, 1.09, -0.45);
+            const fanStand = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.03, 0.12, 0.42, 12),
+                new THREE.MeshStandardMaterial({ color: 0x334155 })
+            );
+            fanStand.position.y = 0.21;
+            fanGroup.add(fanStand);
+
+            fanBladesGroup = new THREE.Group();
+            fanBladesGroup.position.set(0, 0.42, 0.04);
+            const bladeGeo = new THREE.BoxGeometry(0.28, 0.045, 0.01);
+            const bladeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
+            const b1 = new THREE.Mesh(bladeGeo, bladeMat);
+            const b2 = new THREE.Mesh(bladeGeo, bladeMat);
+            b2.rotation.z = Math.PI / 2;
+            fanBladesGroup.add(b1, b2);
+            fanGroup.add(fanBladesGroup);
+            cartGroup.add(fanGroup);
+
+            // Hanging Main Bulb
+            hangingBulbGroup = new THREE.Group();
+            hangingBulbGroup.position.set(0, 3.25, 0.25);
+            const cord = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.012, 0.012, 0.35, 8),
+                new THREE.MeshBasicMaterial({ color: 0x111111 })
+            );
+            cord.position.y = -0.175;
+            const bulbMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xfef08a })
+            );
+            bulbMesh.position.y = -0.36;
+            hangingBulbGroup.add(cord, bulbMesh);
+            cartGroup.add(hangingBulbGroup);
+
+            // Assistant Ujang Mesh (Visible when hired in Suite 3)
+            assistantMesh = new THREE.Group();
+            assistantMesh.position.set(-1.75, 0, 0.65);
+            assistantMesh.visible = false;
+            const ujangBody = new THREE.Mesh(
+                new THREE.BoxGeometry(0.42, 0.65, 0.3),
+                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            ujangBody.position.y = 1.02;
+            const ujangHead = new THREE.Mesh(
+                new THREE.BoxGeometry(0.36, 0.36, 0.36),
+                new THREE.MeshStandardMaterial({ color: 0xd99b72 })
+            );
+            ujangHead.position.y = 1.56;
+            assistantMesh.add(ujangBody, ujangHead);
+            scene.add(assistantMesh);
+
+            scene.add(cartGroup);
+        }
+
+        function buildCookingStation() {
+            const stoveBase = new THREE.Mesh(
+                new THREE.BoxGeometry(0.95, 0.15, 0.95),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.65, roughness: 0.3 })
+            );
+            stoveBase.position.set(-1.15, 1.16, 0.12);
+            stoveBase.castShadow = true;
+            scene.add(stoveBase);
+
+            stoveFlameMesh = new THREE.Mesh(
+                new THREE.TorusGeometry(0.24, 0.038, 12, 24),
+                new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+            );
+            stoveFlameMesh.rotation.x = Math.PI / 2;
+            stoveFlameMesh.position.set(-1.15, 1.26, 0.12);
+            scene.add(stoveFlameMesh);
+
+            const wokGroup = new THREE.Group();
+            wokGroup.position.set(-1.15, 1.36, 0.12);
+
+            const wokMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.72, roughness: 0.28, side: THREE.DoubleSide });
+            const wokBody = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.28, 0.28, 24, 1, true), wokMat);
+            wokBody.castShadow = true;
+            wokGroup.add(wokBody);
+
+            const wokBottom = new THREE.Mesh(new THREE.CircleGeometry(0.28, 24), wokMat);
+            wokBottom.rotation.x = -Math.PI / 2;
+            wokBottom.position.y = -0.13;
+            wokGroup.add(wokBottom);
+
+            const handleGeo = new THREE.BoxGeometry(0.18, 0.04, 0.08);
+            const leftHandle = new THREE.Mesh(handleGeo, wokMat);
+            leftHandle.position.set(-0.5, 0.12, 0);
+            const rightHandle = new THREE.Mesh(handleGeo, wokMat);
+            rightHandle.position.set(0.5, 0.12, 0);
+            wokGroup.add(leftHandle, rightHandle);
+
+            brothMesh = new THREE.Mesh(
+                new THREE.CircleGeometry(0.41, 24),
+                new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.2, emissive: 0x7c2d12, emissiveIntensity: 0.35 })
+            );
+            brothMesh.rotation.x = -Math.PI / 2;
+            brothMesh.position.y = 0.04;
+            wokGroup.add(brothMesh);
+
+            wokFoodGroup = new THREE.Group();
+            wokFoodGroup.position.y = 0.05;
+            wokGroup.add(wokFoodGroup);
+
+            ladleGroup = new THREE.Group();
+            ladleGroup.position.set(0.22, 0.16, -0.15);
+            ladleGroup.rotation.z = -0.55;
+            const ladleHandle = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.016, 0.016, 0.55, 8),
+                new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.8 })
+            );
+            ladleHandle.position.y = 0.22;
+            ladleGroup.add(ladleHandle);
+            wokGroup.add(ladleGroup);
+
+            scene.add(wokGroup);
+
+            const bowlPositions = [
+                [-0.35, -0.35], [0.15, -0.35], [0.65, -0.35],
+                [-0.35,  0.20], [0.15,  0.20], [0.65,  0.20],
+                [0.15,   0.58]
+            ];
+
+            INGREDIENTS.forEach((ing, idx) => {
+                const [bx, bz] = bowlPositions[idx];
+                const bowlContainer = new THREE.Group();
+                bowlContainer.position.set(bx, 1.09, bz);
+                bowlGroupsById[ing.id] = bowlContainer;
+
+                const bowlMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.21, 0.15, 0.14, 18),
+                    new THREE.MeshStandardMaterial({ color: 0xfaf6eb, roughness: 0.28 })
+                );
+                bowlMesh.position.y = 0.07;
+                bowlMesh.castShadow = true;
+                bowlMesh.receiveShadow = true;
+                bowlMesh.userData = { ingredientId: ing.id };
+                bowlContainer.add(bowlMesh);
+                ingredientMeshes.push(bowlMesh);
+
+                const greenRim = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.21, 0.012, 8, 20),
+                    new THREE.MeshBasicMaterial({ color: 0x2d6a4f })
+                );
+                greenRim.rotation.x = Math.PI / 2;
+                greenRim.position.y = 0.14;
+                bowlContainer.add(greenRim);
+
+                const touchHitSphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.27, 10, 10),
+                    new THREE.MeshBasicMaterial({ visible: false })
+                );
+                touchHitSphere.position.y = 0.12;
+                touchHitSphere.userData = { ingredientId: ing.id };
+                bowlContainer.add(touchHitSphere);
+                ingredientMeshes.push(touchHitSphere);
+
+                const pileGroup = new THREE.Group();
+                pileGroup.position.y = 0.14;
+                for (let i = 0; i < 6; i++) {
+                    const piece = createIngredientPieceMesh(ing.id);
+                    piece.position.set((Math.random() - 0.5) * 0.16, Math.random() * 0.04, (Math.random() - 0.5) * 0.16);
+                    piece.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+                    piece.userData = { ingredientId: ing.id };
+                    ingredientMeshes.push(piece);
+                    pileGroup.add(piece);
+                }
+                bowlContainer.add(pileGroup);
+                scene.add(bowlContainer);
+            });
+
+            // Dine-in Serving Bowl
+            servingBowlGroup = new THREE.Group();
+            servingBowlGroup.position.set(-1.15, 1.09, -0.52);
+            const serveBowl = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.24, 0.14, 0.16, 20),
+                new THREE.MeshStandardMaterial({ color: 0xfaf6eb, roughness: 0.25 })
+            );
+            serveBowl.position.y = 0.08;
+            serveBowl.castShadow = true;
+            const redStripe = new THREE.Mesh(
+                new THREE.TorusGeometry(0.24, 0.012, 8, 24),
+                new THREE.MeshBasicMaterial({ color: 0xc83e2b })
+            );
+            redStripe.rotation.x = Math.PI / 2;
+            redStripe.position.y = 0.16;
+            servedFoodGroup = new THREE.Group();
+            servedFoodGroup.position.y = 0.13;
+            servingBowlGroup.add(serveBowl, redStripe, servedFoodGroup);
+            scene.add(servingBowlGroup);
+
+            // Takeaway Cup for Online Ojol
+            takeawayBoxGroup = new THREE.Group();
+            takeawayBoxGroup.position.set(-0.75, 1.09, -0.54);
+            takeawayBoxGroup.visible = false;
+            const paperCup = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.13, 0.22, 18),
+                new THREE.MeshStandardMaterial({ color: 0xf3dfb9, roughness: 0.6 })
+            );
+            paperCup.position.y = 0.11;
+            const greenLid = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.19, 0.19, 0.03, 18),
+                new THREE.MeshStandardMaterial({ color: 0x16a34a })
+            );
+            greenLid.position.y = 0.225;
+            takeawayBoxGroup.add(paperCup, greenLid);
+            scene.add(takeawayBoxGroup);
+        }
+
+        function createIngredientPieceMesh(id) {
+            switch (id) {
+                case 'udang':
+                    return new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.022, 8, 12, Math.PI * 1.3), new THREE.MeshStandardMaterial({ color: 0xfb7185, roughness: 0.3 }));
+                case 'cumi':
+                    return new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.018, 8, 16), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 }));
+                case 'bakso':
+                    return new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), new THREE.MeshStandardMaterial({ color: 0xfed7aa, roughness: 0.4 }));
+                case 'sawi':
+                    return new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.015, 0.05), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.5 }));
+                case 'cabai':
+                    return new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 8), new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.4 }));
+                case 'mie':
+                    return new THREE.Mesh(new THREE.TorusKnotGeometry(0.035, 0.01, 20, 6), new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.4 }));
+                default:
+                    return new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.015, 10), new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.4 }));
+            }
+        }
+
+        function buildCashierCounter() {
+            const cashierGroup = new THREE.Group();
+            cashierGroup.position.set(1.6, 1.09, 0.0);
+
+            const regBody = new THREE.Mesh(
+                new THREE.BoxGeometry(0.75, 0.34, 0.65),
+                new THREE.MeshStandardMaterial({ color: 0x3d2516, roughness: 0.5 })
+            );
+            regBody.position.y = 0.25;
+            regBody.castShadow = true;
+            cashierGroup.add(regBody);
+
+            const screen = new THREE.Mesh(
+                new THREE.BoxGeometry(0.45, 0.16, 0.08),
+                new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+            );
+            screen.position.set(0, 0.48, -0.15);
+            cashierGroup.add(screen);
+
+            const qrisStand = new THREE.Mesh(
+                new THREE.BoxGeometry(0.16, 0.24, 0.02),
+                new THREE.MeshStandardMaterial({ color: 0xfaf6eb })
+            );
+            qrisStand.position.set(-0.48, 0.12, -0.2);
+            qrisStand.rotation.y = 0.35;
+            cashierGroup.add(qrisStand);
+
+            cashDrawerMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.68, 0.1, 0.58),
+                new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6 })
+            );
+            cashDrawerMesh.position.set(0, 0.06, 0.02);
+            cashierGroup.add(cashDrawerMesh);
+
+            customerPaymentBillMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(0.36, 0.008, 0.18),
+                new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 })
+            );
+            customerPaymentBillMesh.position.set(-0.55, 0.01, 0.15);
+            customerPaymentBillMesh.rotation.y = 0.25;
+            customerPaymentBillMesh.visible = false;
+            cashierGroup.add(customerPaymentBillMesh);
+
+            scene.add(cashierGroup);
+        }
+
+        function buildCustomerCharacter() {
+            customerGroup = new THREE.Group();
+            customerGroup.position.set(0.15, 0, -1.55);
+            rebuildCustomerMesh(CUSTOMERS_DATA[0]);
+            scene.add(customerGroup);
+        }
+
+        function rebuildCustomerMesh(profile) {
+            if (!customerGroup) return;
+            while (customerGroup.children.length > 0) {
+                customerGroup.remove(customerGroup.children[0]);
+            }
+
+            const shirtMat = new THREE.MeshStandardMaterial({ color: profile.shirt, roughness: 0.6 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: profile.skin, roughness: 0.55 });
+            const shape = profile.shape || 'box';
+
+            let torso, head, headY = 1.68;
+            if (shape === 'box') {
+                torso = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.72, 0.36), shirtMat);
+                torso.position.y = 1.04;
+                head = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.44, 0.44), skinMat);
+                headY = 1.66;
+            } else if (shape === 'round' || shape === 'chubby') {
+                const scaleW = shape === 'chubby' ? 1.24 : 1.05;
+                torso = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 18), shirtMat);
+                torso.scale.set(scaleW, 1.15, 1.0);
+                torso.position.y = 1.04;
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 20), skinMat);
+                headY = 1.64;
+            } else {
+                torso = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.25, 0.85, 16), shirtMat);
+                torso.position.y = 1.10;
+                head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 18, 18), skinMat);
+                head.scale.set(0.95, 1.15, 0.95);
+                headY = 1.78;
+            }
+
+            torso.castShadow = true;
+            head.position.y = headY;
+            head.castShadow = true;
+            customerGroup.add(torso, head);
+
+            // VIP Vlogger Ring Light Tripod (Suite 2)
+            if (profile.isVip) {
+                const tripodPole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.015, 0.02, 1.35, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x1e293b })
+                );
+                tripodPole.position.set(0.42, 0.95, 0.25);
+                const ringLight = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.14, 0.018, 10, 24),
+                    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                );
+                ringLight.position.set(0.42, 1.65, 0.25);
+                customerGroup.add(tripodPole, ringLight);
+            }
+
+            if (profile.hat === 'helmet') {
+                const helmet = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.28, 18, 18, 0, Math.PI * 2, 0, Math.PI * 0.65),
+                    new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.25 })
+                );
+                helmet.position.y = headY + 0.02;
+                const bag = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.44, 0.46, 0.28),
+                    new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 })
+                );
+                bag.position.set(0, 1.14, -0.32);
+                customerGroup.add(helmet, bag);
+            } else if (profile.hat === 'peci') {
+                const peci = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.21, 0.22, 0.16, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x111827 })
+                );
+                peci.position.y = headY + 0.22;
+                customerGroup.add(peci);
+            } else if (profile.hat === 'hijab') {
+                const hijab = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.275, 18, 18),
+                    new THREE.MeshStandardMaterial({ color: 0xfaf6eb })
+                );
+                hijab.position.set(0, headY, -0.03);
+                customerGroup.add(hijab);
+            } else if (profile.hat === 'cap') {
+                const capCrown = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.46, 0.14, 0.46),
+                    new THREE.MeshStandardMaterial({ color: 0xc83e2b })
+                );
+                capCrown.position.y = headY + 0.22;
+                const capVisor = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.38, 0.04, 0.22),
+                    new THREE.MeshStandardMaterial({ color: 0x2b1d12 })
+                );
+                capVisor.position.set(0, headY + 0.17, 0.28);
+                customerGroup.add(capCrown, capVisor);
+            } else {
+                const hair = new THREE.Mesh(
+                    shape === 'box'
+                        ? new THREE.BoxGeometry(0.46, 0.14, 0.46)
+                        : new THREE.SphereGeometry(0.245, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.55),
+                    new THREE.MeshStandardMaterial({ color: 0x1e1b18 })
+                );
+                hair.position.y = headY + (shape === 'box' ? 0.22 : 0.02);
+                customerGroup.add(hair);
+            }
+
+            const eyeGeo = new THREE.SphereGeometry(0.028, 8, 8);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+            const eyeZ = shape === 'box' ? 0.23 : 0.21;
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+            leftEye.position.set(-0.08, headY + 0.02, eyeZ);
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+            rightEye.position.set(0.08, headY + 0.02, eyeZ);
+            customerGroup.add(leftEye, rightEye);
+
+            if (profile.glasses) {
+                const frameMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+                const leftRim = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.01, 6, 12), frameMat);
+                leftRim.position.set(-0.085, headY + 0.02, eyeZ + 0.02);
+                const rightRim = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.01, 6, 12), frameMat);
+                rightRim.position.set(0.085, headY + 0.02, eyeZ + 0.02);
+                customerGroup.add(leftRim, rightRim);
+            }
+        }
+
+        // --- RAYCASTING & INPUT ---
+        function getHoveredIngredient(clientX, clientY) {
+            if (!raycaster || !camera) return null;
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(ingredientMeshes, false);
+            return (hits.length > 0 && hits[0].object.userData.ingredientId) ? hits[0].object.userData.ingredientId : null;
+        }
+
+        function getClickedWokIngredient(clientX, clientY) {
+            if (!raycaster || !camera || !wokFoodGroup || wokFoodGroup.children.length === 0) return null;
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(wokFoodGroup.children, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj && !obj.userData.wokIngredientId && obj.parent) obj = obj.parent;
+                if (obj && obj.userData.wokIngredientId) return obj.userData.wokIngredientId;
+            }
+            return null;
+        }
+
+        function onPointerDown(e) {
+            if (!gameState.started) return;
+            isDragging = true;
+            prevPointer = { x: e.clientX, y: e.clientY };
+
+            if (gameState.phase === 'COOK') {
+                const wokHitId = getClickedWokIngredient(e.clientX, e.clientY);
+                if (wokHitId) {
+                    removeOneIngredientFromWok(wokHitId, e.clientX, e.clientY);
+                    return;
+                }
+                const hitIngId = getHoveredIngredient(e.clientX, e.clientY);
+                if (hitIngId) addIngredientToWok(hitIngId, e.clientX, e.clientY);
+            }
+        }
+
+        function onPointerMove(e) {
+            if (isDragging) {
+                const dx = e.clientX - prevPointer.x;
+                const dy = e.clientY - prevPointer.y;
+                prevPointer = { x: e.clientX, y: e.clientY };
+                userOrbitOffset.theta = Math.max(-0.75, Math.min(0.75, userOrbitOffset.theta - dx * 0.004));
+                userOrbitOffset.phi = Math.max(-0.35, Math.min(0.45, userOrbitOffset.phi + dy * 0.004));
+            }
+
+            const tooltip = document.getElementById('hover-tooltip');
+            if (!gameState.started || gameState.phase !== 'COOK' || isDragging || e.pointerType === 'touch') {
+                tooltip.classList.add('hidden');
+                document.body.style.cursor = 'default';
+                return;
+            }
+
+            const wokHitId = getClickedWokIngredient(e.clientX, e.clientY);
+            if (wokHitId) {
+                const ing = INGREDIENTS.find(i => i.id === wokHitId);
+                document.getElementById('tt-icon').textContent = ing.icon;
+                document.getElementById('tt-name').textContent = `Balikin ${ing.name}`;
+                document.getElementById('tt-price').textContent = '-1 Takaran';
+                document.getElementById('tt-status').textContent = 'Klik untuk kembalikan ke baskom';
+                tooltip.style.left = `${e.clientX}px`;
+                tooltip.style.top = `${e.clientY}px`;
+                tooltip.classList.remove('hidden');
+                document.body.style.cursor = 'pointer';
+                return;
+            }
+
+            const hitIngId = getHoveredIngredient(e.clientX, e.clientY);
+            if (hitIngId) {
+                const ing = INGREDIENTS.find(i => i.id === hitIngId);
+                const got = gameState.wokContents[hitIngId] || 0;
+                const stok = gameState.stock[hitIngId] || 0;
+                document.getElementById('tt-icon').textContent = ing.icon;
+                document.getElementById('tt-name').textContent = ing.name;
+                document.getElementById('tt-price').textContent = formatRupiah(ing.price);
+                document.getElementById('tt-status').textContent = `Stok Baskom: ${stok} | Di Wajan: ${got}`;
+                tooltip.style.left = `${e.clientX}px`;
+                tooltip.style.top = `${e.clientY}px`;
+                tooltip.classList.remove('hidden');
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.add('hidden');
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        function onPointerUp() { isDragging = false; }
+        function onWindowResize() { updateResponsiveCameraProjection(); }
+
+        function onKeyDown(e) {
+            if (!gameState.started) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame('JURAGAN'); }
+                return;
+            }
+            if (gameState.phase === 'COOK') {
+                const num = parseInt(e.key, 10);
+                if (num >= 1 && num <= INGREDIENTS.length) {
+                    const ing = INGREDIENTS[num - 1];
+                    addIngredientToWok(ing.id, window.innerWidth * 0.45, window.innerHeight * 0.55);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    startStoveMinigame();
+                } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                    e.preventDefault();
+                    resetWok();
+                }
+            } else if (gameState.phase === 'STOVE_MINIGAME') {
+                if (e.key === ' ') { e.preventDefault(); stirWokLadle(); }
+                else if (e.key === 'Enter') { e.preventDefault(); finishCookingFromStove(); }
+            } else if (gameState.phase === 'CASHIER') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (gameState.orderMode === 'ONLINE' || gameState.orderMode === 'PRASMANAN') confirmOnlinePayment();
+                    else submitChange();
+                } else if (e.key === 'Backspace' && gameState.selectedBills.length > 0) {
+                    e.preventDefault();
+                    removeChangeAt(gameState.selectedBills.length - 1);
+                }
+            }
+        }
+
+        // --- SUITE 1: MARKET STOCK, END OF DAY & BANK KELILING ---
+        function rollMarketPrices() {
+            INGREDIENTS.forEach(ing => {
+                const factor = 0.8 + Math.random() * 0.5;
+                gameState.marketPrices[ing.id] = Math.round((ing.marketBase * factor) / 100) * 100;
+            });
+        }
+
+        function openMarketModal() {
+            renderMarketModal();
+            document.getElementById('market-modal').classList.remove('hidden');
+        }
+
+        function buyStockBundle(ingId) {
+            const unitPrice = gameState.marketPrices[ingId] || 1000;
+            const bundleQty = 5;
+            const totalCost = unitPrice * bundleQty;
+            if (gameState.money < totalCost && gameState.money < -25000) {
+                sfx.playError();
+                showFeedback('💸', 'Kas Terlalu Minus!', 'Tidak bisa belanja stok lagi, selesaikan pesanan atau ambil modal Bank Keliling.');
+                return;
+            }
+            gameState.money -= totalCost;
+            gameState.stock[ingId] = (gameState.stock[ingId] || 0) + bundleQty;
+            sfx.playChaChing();
+            updateHUD();
+            buildQuickIngredientUI();
+            renderMarketModal();
+            checkBankKelilingTrigger();
+        }
+
+        function renderMarketModal() {
+            const container = document.getElementById('market-items-list');
+            container.innerHTML = INGREDIENTS.map(ing => {
+                const stok = gameState.stock[ing.id] || 0;
+                const price = gameState.marketPrices[ing.id] || ing.marketBase;
+                const bundleCost = price * 5;
+                return `
+                    <div class="bg-[#f3dfb9] border-2 border-[#2b1d12] rounded-lg p-2.5 flex items-center justify-between gap-2">
+                        <div>
+                            <div class="font-display font-extrabold text-xs sm:text-sm">${ing.icon} ${ing.name} <span class="font-mono-print text-[10px] bg-[#2b1d12] text-white px-1.5 rounded">Sisa: ${stok}</span></div>
+                            <div class="font-mono-print text-[10px] text-[#5c3a21] mt-0.5">Harga pasar hari ini: ${formatRupiah(price)} / porsi</div>
+                        </div>
+                        <button onclick="buyStockBundle('${ing.id}')" class="btn-tactile bg-[#2d6a4f] text-white font-display font-bold text-xs px-3 py-1.5 rounded shrink-0">
+                            +5 Stok (${formatRupiah(bundleCost)})
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function endDaySummary() {
+            if (gameState.phase === 'STOVE_MINIGAME') return;
+            gameState.day += 1;
+            rollMarketPrices();
+
+            // Settle Kasbon with +20% interest
+            let kasbonCollected = 0;
+            if (gameState.kasbonList.length > 0) {
+                gameState.kasbonList.forEach(entry => {
+                    kasbonCollected += Math.round((entry.amount * 1.2) / 500) * 500;
+                });
+                gameState.money += kasbonCollected;
+                gameState.kasbonList = [];
+                updateKasbonBadge();
+            }
+
+            // Deduct Bank Keliling installment if in debt
+            let debtPaid = 0;
+            if (gameState.bankDebt > 0) {
+                debtPaid = Math.min(gameState.bankDebt, 12000);
+                gameState.bankDebt -= debtPaid;
+                gameState.money -= debtPaid;
+            }
+
+            sfx.playSuccess();
+            updateHUD();
+            showFeedback(
+                '🌅',
+                `Selamat Pagi Hari Ke-${gameState.day}!`,
+                `Kasbon cair +${formatRupiah(kasbonCollected)}${debtPaid > 0 ? ` | Cicilan Bank -${formatRupiah(debtPaid)}` : ''} | Harga pasar diperbarui!`
+            );
+            checkBankKelilingTrigger();
+        }
+
+        function checkBankKelilingTrigger() {
+            if (gameState.playMode === 'JURAGAN' && gameState.money <= -30000 && gameState.bankDebt === 0) {
+                document.getElementById('bank-keliling-modal').classList.remove('hidden');
+            }
+        }
+
+        function takeBankKelilingLoan() {
+            gameState.money += 50000;
+            gameState.bankDebt += 60000;
+            closeModal('bank-keliling-modal');
+            sfx.playChaChing();
+            updateHUD();
+            showFeedback('💼', 'Modal Cair +Rp 50.000!', 'Kas warung aman kembali. Cicilan otomatis Rp 12.000 tiap tutup hari.');
+        }
+
+        // --- SUITE 1B: STOVE HEAT & DONENESS MINIGAME ---
+        function startStoveMinigame() {
+            if (gameState.phase !== 'COOK') return;
+            const totalInWok = Object.values(gameState.wokContents).reduce((a, b) => a + b, 0);
+            if (totalInWok === 0) {
+                showFeedback('⚠️', 'Wajan Masih Kosong!', 'Masukkan bahan seblak dulu sebelum menyalakan kompor!');
+                sfx.playError();
+                return;
+            }
+
+            if (gameState.orderMode === 'PRASMANAN') {
+                const wokValue = getWokTotalPrice();
+                const discount = gameState.jumatBerkahActive ? 0.5 : 1.0;
+                const finalBill = Math.round((wokValue * discount) / 500) * 500;
+                if (finalBill > gameState.buyerWallet) {
+                    sfx.playError();
+                    showFeedback('💸', 'Dompet Pembeli Kurang!', `Total ${formatRupiah(finalBill)}, dompetmu ${formatRupiah(gameState.buyerWallet)}. Balikin beberapa topping!`);
+                    return;
+                }
+            }
+
+            gameState.phase = 'STOVE_MINIGAME';
+            gameState.doneness = 0;
+            setStoveHeat('MED');
+            document.getElementById('stove-minigame-panel').classList.remove('hidden');
+            document.getElementById('hover-tooltip').classList.add('hidden');
+
+            brothMesh.material.color.setHex(0xc83e2b);
+            brothMesh.material.emissiveIntensity = 0.85;
+
+            if (gameState.stoveInterval) clearInterval(gameState.stoveInterval);
+            gameState.stoveInterval = setInterval(() => {
+                if (gameState.phase !== 'STOVE_MINIGAME') return;
+                const speedMap = { LOW: 1.4, MED: 2.5, HIGH: 4.1 };
+                const stoveStabilizer = Math.max(0.7, 1 - (gameState.upgrades.stove - 1) * 0.08);
+                gameState.doneness = Math.min(100, gameState.doneness + speedMap[gameState.stoveHeat] * stoveStabilizer);
+
+                const bar = document.getElementById('doneness-fill-bar');
+                const txt = document.getElementById('doneness-status-text');
+                const pct = Math.round(gameState.doneness);
+                bar.style.width = `${pct}%`;
+
+                if (pct < 58) {
+                    bar.className = 'h-full bg-[#38bdf8] transition-all duration-75';
+                    txt.textContent = `Masih Mentah / Alot (${pct}%)`;
+                } else if (pct <= 84) {
+                    bar.className = 'h-full bg-[#22c55e] transition-all duration-75';
+                    txt.textContent = `MATANG PAS! Angkat Sekarang (${pct}%)`;
+                } else {
+                    bar.className = 'h-full bg-[#dc2626] transition-all duration-75';
+                    txt.textContent = `AWAS GOSONG! Aduk / Angkat (${pct}%)`;
+                }
+
+                if (Math.random() < 0.35) spawnSteamParticle(-1.15, 1.46, 0.12);
+            }, 90);
+        }
+
+        function setStoveHeat(level) {
+            gameState.stoveHeat = level;
+            const labels = { LOW: 'Api Kecil', MED: 'Api Sedang', HIGH: 'Api Besar' };
+            document.getElementById('stove-heat-label').textContent = labels[level];
+            ['LOW', 'MED', 'HIGH'].forEach(lvl => {
+                const btn = document.getElementById(`btn-heat-${lvl.toLowerCase()}`);
+                btn.className = lvl === level
+                    ? 'btn-tactile bg-[#e59819] text-[#2b1d12] font-display font-extrabold text-xs py-2 rounded'
+                    : 'btn-tactile bg-[#334155] text-white font-display font-bold text-xs py-2 rounded';
+            });
+            sfx.playPaperSnap();
+        }
+
+        function stirWokLadle() {
+            if (gameState.phase !== 'STOVE_MINIGAME') return;
+            gameState.doneness = Math.max(0, gameState.doneness - 8);
+            sfx.playSizzle();
+            for (let i = 0; i < 5; i++) spawnSteamParticle(-1.15, 1.46, 0.12);
+        }
+
+        function finishCookingFromStove() {
+            if (gameState.phase !== 'STOVE_MINIGAME') return;
+            clearInterval(gameState.stoveInterval);
+            gameState.stoveInterval = null;
+            document.getElementById('stove-minigame-panel').classList.add('hidden');
+            clearOnlineTimer();
+
+            brothMesh.material.color.setHex(0xea580c);
+            brothMesh.material.emissiveIntensity = 0.35;
+
+            const pct = gameState.doneness;
+            if (pct < 58) gameState.donenessGrade = 'UNDERCOOKED';
+            else if (pct <= 84) gameState.donenessGrade = 'PERFECT';
+            else gameState.donenessGrade = 'BURNT';
+
+            const seafoodCount = (gameState.wokContents['udang'] || 0) + (gameState.wokContents['cumi'] || 0);
+            if (seafoodCount > 0) advanceQuest('seafood_use', seafoodCount);
+
+            const wokValue = getWokTotalPrice();
+            let passed = true;
+            let failReason = '';
+
+            if (gameState.donenessGrade === 'BURNT') {
+                passed = false;
+                failReason = 'Seblaknya gosong pahit!';
+            } else if (gameState.donenessGrade === 'UNDERCOOKED') {
+                passed = false;
+                failReason = 'Kerupuknya masih alot mentah!';
+            }
+
+            if (passed && gameState.orderMode !== 'PRASMANAN') {
+                if (gameState.sideDrink && !gameState.sideDrinkPrepared) {
+                    passed = false;
+                    failReason = `Lupa menyiapkan ${gameState.sideDrink.name}!`;
+                } else if (gameState.orderMode === 'BUDGET') {
+                    const minAcceptable = Math.floor(gameState.budgetTarget * 0.72);
+                    const hasCraving = !gameState.budgetCravingId || (gameState.wokContents[gameState.budgetCravingId] || 0) >= 1;
+                    if (!hasCraving) {
+                        const reqIng = INGREDIENTS.find(i => i.id === gameState.budgetCravingId);
+                        passed = false;
+                        failReason = `Wajib ada ${reqIng ? reqIng.name : 'topping'}!`;
+                    } else if (wokValue > gameState.budgetTarget) {
+                        passed = false;
+                        failReason = `Kelebihan dari budget ${formatRupiah(gameState.budgetTarget)}!`;
+                    } else if (wokValue < minAcceptable) {
+                        passed = false;
+                        failReason = `Isian kurang dari budget ${formatRupiah(gameState.budgetTarget)}!`;
+                    }
+                } else {
+                    let totalRequired = 0;
+                    let totalDiff = 0;
+                    INGREDIENTS.forEach(ing => {
+                        const req = gameState.order[ing.id] || 0;
+                        const got = gameState.wokContents[ing.id] || 0;
+                        totalRequired += req;
+                        totalDiff += Math.abs(req - got);
+                    });
+                    const acc = Math.max(0, 1 - (totalDiff / Math.max(1, totalRequired)));
+                    const minAcc = gameState.upgrades.wok >= 3 ? 0.80 : 0.90;
+                    if (acc < minAcc) {
+                        passed = false;
+                        failReason = 'Takaran bahan tidak sesuai nota!';
+                    }
+                }
+            }
+
+            gameState.orderPassed = passed;
+
+            const servedBroth = new THREE.Mesh(
+                new THREE.CircleGeometry(0.21, 20),
+                new THREE.MeshStandardMaterial({ color: gameState.donenessGrade === 'BURNT' ? 0x292524 : 0xc83e2b, roughness: 0.25 })
+            );
+            servedBroth.rotation.x = -Math.PI / 2;
+            servedFoodGroup.add(servedBroth);
+
+            if (gameState.orderMode === 'PRASMANAN') {
+                const discount = gameState.jumatBerkahActive ? 0.5 : 1.0;
+                gameState.totalBill = Math.round((wokValue * discount) / 500) * 500;
+                gameState.customerPaid = gameState.totalBill;
+                const cabaiCount = gameState.wokContents['cabai'] || 0;
+                const spicePct = Math.min(100, cabaiCount * 28);
+                document.getElementById('spicy-vignette').style.opacity = spicePct >= 55 ? '1' : '0';
+                sfx.playSuccess();
+                showFeedback('😋', 'Seblak Prasmanan Siap!', `Total ${formatRupiah(gameState.totalBill)}. Yuk bayar QRIS di kasir!`);
+            } else if (passed) {
+                sfx.playSuccess();
+                showFeedback('🤤', 'Matang Pas & Mantap!', 'Seblak siap disajikan. Lanjut ke kasir!');
+            } else {
+                sfx.playError();
+                showFeedback('💢', 'Pesanan Komplain!', `${failReason} Siap-siap potong rugi!`);
+            }
+
+            enterCashierPhase();
+        }
+
+        // --- SUITE 2: STREET EVENTS (PENGAMEN/PARKIR), KASBON & UV SCANNER ---
+        function maybeTriggerStreetEvent() {
+            if (gameState.playMode !== 'JURAGAN') return;
+            if (Math.random() < 0.28 && gameState.customerNumber >= 2) {
+                const isPengamen = Math.random() > 0.5;
+                gameState.activeStreetEvent = isPengamen ? 'PENGAMEN' : 'PARKIR';
+                document.getElementById('event-icon').textContent = isPengamen ? '🎸' : '🦺';
+                document.getElementById('event-title').textContent = isPengamen ? 'Pengamen Jalanan Datang!' : 'Kang Parkir Mampir!';
+                document.getElementById('event-desc').textContent = isPengamen
+                    ? '"Permisi Bang, bagi receh Rp 2.000 biar pembeli makin betah!"'
+                    : '"Parkiran aman terkendali Bang, minta uang rokok Rp 2.000!"';
+                document.getElementById('street-event-banner').classList.remove('hidden');
+            }
+        }
+
+        function resolveStreetEvent(giveTip) {
+            document.getElementById('street-event-banner').classList.add('hidden');
+            if (giveTip) {
+                gameState.money -= 2000;
+                gameState.reputation = Math.min(5, gameState.reputation + 1);
+                addXp(15);
+                sfx.playCoin();
+                showFeedback('🤝', 'Suasana Warung Aman!', 'Kasih receh Rp 2.000, pembeli makin nyaman (+15 XP).');
+            } else {
+                gameState.reputation = Math.max(1, gameState.reputation - 1);
+                sfx.playError();
+                showFeedback('😒', 'Suasana Agak Gaduh', 'Reputasi turun sedikit karena dicuekin.');
+            }
+            gameState.activeStreetEvent = null;
+            updateHUD();
+        }
+
+        function scanBillWithUV() {
+            if (gameState.phase !== 'CASHIER') return;
+            gameState.uvChecked = true;
+            sfx.playPaperSnap();
+            const statusEl = document.getElementById('uv-status-text');
+            const rejectBtn = document.getElementById('btn-reject-fake');
+
+            if (gameState.isFakeBill) {
+                statusEl.innerHTML = '<span class="text-[#f87171] font-extrabold">⚠️ TERDETEKSI UANG PALSU! Tidak ada tanda air UV!</span>';
+                rejectBtn.classList.remove('hidden');
+                sfx.playError();
+            } else {
+                statusEl.innerHTML = '<span class="text-[#4ade80] font-extrabold">✓ UANG ASLI! Tanda air Bank Indonesia menyala terang.</span>';
+                rejectBtn.classList.add('hidden');
+            }
+        }
+
+        function rejectFakeBill() {
+            if (!gameState.isFakeBill) return;
+            sfx.playSuccess();
+            addXp(35);
+            showFeedback('🛡️', 'Uang Palsu Ditolak!', 'Pembeli nakal kabur! Warungmu selamat dari kerugian (+35 XP).');
+            gameState.customerNumber++;
+            setTimeout(() => spawnNextCustomer(), 1700);
+        }
+
+        function acceptCustomerKasbon() {
+            if (!gameState.wantsKasbon || gameState.phase !== 'CASHIER') return;
+            if (!gameState.orderPassed) {
+                sfx.playError();
+                showFeedback('😠', 'Pesanan Salah!', 'Tetangga tidak mau kasbon kalau pesanannya salah!');
+                return;
+            }
+            gameState.kasbonList.push({
+                name: gameState.currentCustomer.name,
+                amount: gameState.totalBill,
+                day: gameState.day
+            });
+            updateKasbonBadge();
+            sfx.playPaperSnap();
+            showFeedback('📒', 'Dicatat di Buku Kasbon!', `${gameState.currentCustomer.name} ngutang ${formatRupiah(gameState.totalBill)} (dibayar +20% saat Tutup Hari).`);
+            gameState.customerNumber++;
+            setTimeout(() => spawnNextCustomer(), 1700);
+        }
+
+        function updateKasbonBadge() {
+            document.getElementById('kasbon-count-badge').textContent = gameState.kasbonList.length;
+        }
+
+        function openKasbonModal() {
+            const box = document.getElementById('kasbon-list-container');
+            if (gameState.kasbonList.length === 0) {
+                box.innerHTML = '<div class="text-center py-4 text-[#5c3a21] italic">Belum ada catatan kasbon hari ini.</div>';
+            } else {
+                box.innerHTML = gameState.kasbonList.map(k => `
+                    <div class="bg-[#f3dfb9] border-2 border-[#2b1d12] rounded p-2 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${k.name} (Hari ${k.day})</div>
+                            <div class="text-[10px] text-[#5c3a21]">Pokok: ${formatRupiah(k.amount)}</div>
+                        </div>
+                        <div class="font-extrabold text-[#15803d]">Tagih: ${formatRupiah(Math.round((k.amount * 1.2) / 500) * 500)}</div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('kasbon-modal').classList.remove('hidden');
+        }
+
+        // --- SUITE 3: 3D GEROBAK DECORATION & ASSISTANT ---
+        function openDecorModal() {
+            document.getElementById('input-banner-text').value = gameState.bannerText;
+            document.getElementById('decor-modal').classList.remove('hidden');
+        }
+
+        function applyBannerText() {
+            const val = document.getElementById('input-banner-text').value.trim();
+            if (!val) return;
+            gameState.bannerText = val.toUpperCase();
+            if (bannerMesh) {
+                bannerMesh.material.map = createSpandukTexture(gameState.bannerText, gameState.bannerColor);
+                bannerMesh.material.needsUpdate = true;
+            }
+            sfx.playPaperSnap();
+        }
+
+        function setBannerColor(hex) {
+            gameState.bannerColor = hex;
+            if (bannerMesh) {
+                bannerMesh.material.map = createSpandukTexture(gameState.bannerText, gameState.bannerColor);
+                bannerMesh.material.needsUpdate = true;
+            }
+            sfx.playPaperSnap();
+        }
+
+        function toggleDecorProp(key) {
+            gameState.decor[key] = !gameState.decor[key];
+            document.getElementById(`status-${key}`).textContent = gameState.decor[key] ? 'AKTIF' : 'MATI';
+            if (key === 'fairyLights' && fairyLightsGroup) fairyLightsGroup.visible = gameState.decor.fairyLights;
+            sfx.playPaperSnap();
+        }
+
+        function prepareSideDrink() {
+            if (!gameState.sideDrink || gameState.sideDrinkPrepared) return;
+            gameState.sideDrinkPrepared = true;
+            const btn = document.getElementById('btn-prep-drink');
+            btn.textContent = '✓ Siap';
+            btn.className = 'bg-[#2d6a4f] text-white px-2 py-0.5 rounded border border-[#2b1d12] font-bold';
+            sfx.playCoin();
+        }
+
+        // --- SUITE 4: PRASMANAN EXTRAS ---
+        function toggleJumatBerkah() {
+            gameState.jumatBerkahActive = !gameState.jumatBerkahActive;
+            const btn = document.getElementById('btn-jumat-berkah');
+            btn.textContent = gameState.jumatBerkahActive ? '✓ Diskon 50% AKTIF' : '🏷️ Promo Jumat Berkah 50%';
+            btn.className = gameState.jumatBerkahActive
+                ? 'text-[9px] font-bold bg-[#2d6a4f] text-white border border-[#2b1d12] px-1.5 py-0.5 rounded'
+                : 'text-[9px] font-bold bg-[#e59819] text-[#2b1d12] border border-[#2b1d12] px-1.5 py-0.5 rounded';
+            sfx.playPaperSnap();
+            renderOrderTicket();
+        }
+
+        function buyCoolingDrinkInPrasmanan() {
+            if (gameState.buyerWallet < 3000) {
+                sfx.playError();
+                showFeedback('💸', 'Dompet Kurang!', 'Butuh Rp 3.000 untuk beli Es Teh Manis.');
+                return;
+            }
+            gameState.buyerWallet -= 3000;
+            document.getElementById('spicy-vignette').style.opacity = '0';
+            sfx.playCoin();
+            updateHUD();
+            showFeedback('🧊', 'Segar Banget!', 'Es Teh Manis langsung meredakan rasa pedas!');
+        }
+
+        // --- CORE ORDERING, WOK & CASHIER FLOW ---
+        function initQuests() {
+            gameState.quests = QUEST_TEMPLATES.slice(0, 3).map((tpl, i) => ({
+                ...tpl, uid: `q_${Date.now()}_${i}`, progress: 0, claimed: false
+            }));
+            renderQuests();
+        }
+
+        function advanceQuest(questId, amount = 1) {
+            let hasClaimable = false;
+            gameState.quests.forEach(q => {
+                if (q.id === questId && !q.claimed) q.progress = Math.min(q.target, q.progress + amount);
+                if (q.progress >= q.target && !q.claimed) hasClaimable = true;
+            });
+            document.getElementById('quest-claim-dot').classList.toggle('hidden', !hasClaimable);
+            renderQuests();
+        }
+
+        function claimQuestReward(uid) {
+            const idx = gameState.quests.findIndex(q => q.uid === uid);
+            if (idx === -1) return;
+            const q = gameState.quests[idx];
+            if (q.progress < q.target || q.claimed) return;
+
+            gameState.money += q.rewardMoney;
+            addXp(q.rewardXp);
+            sfx.playChaChing();
+            showFeedback('🎁', 'Hadiah Misi Diklaim!', `+${formatRupiah(q.rewardMoney)} & +${q.rewardXp} XP!`);
+
+            const nextTpl = QUEST_TEMPLATES[Math.floor(Math.random() * QUEST_TEMPLATES.length)];
+            gameState.quests[idx] = { ...nextTpl, uid: `q_${Date.now()}_${Math.random()}`, progress: 0, claimed: false };
+            document.getElementById('quest-claim-dot').classList.toggle('hidden', !gameState.quests.some(i => i.progress >= i.target));
+            updateHUD();
+            renderQuests();
+        }
+
+        function renderQuests() {
+            const container = document.getElementById('quest-list-container');
+            if (!container) return;
+            container.innerHTML = gameState.quests.map(q => {
+                const done = q.progress >= q.target;
+                const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
+                return `
+                    <div class="bg-[#f3dfb9] border-2 border-[#2b1d12] rounded-lg p-2.5">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="font-display font-bold text-xs text-[#2b1d12]">${q.title}</div>
+                            <span class="font-mono-print text-[10px] font-bold bg-[#2b1d12] text-[#faf6eb] px-1.5 py-0.5 rounded shrink-0">${q.progress}/${q.target}</span>
+                        </div>
+                        <div class="w-full h-2 bg-[#d4b483] border border-[#2b1d12] rounded-sm overflow-hidden my-1.5">
+                            <div class="h-full bg-[#2d6a4f] transition-all" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono-print text-[10px] font-bold text-[#7c2d12]">Hadiah: ${formatRupiah(q.rewardMoney)} + ${q.rewardXp} XP</span>
+                            ${done ? `<button onclick="claimQuestReward('${q.uid}')" class="btn-tactile bg-[#e59819] text-[#2b1d12] font-display font-extrabold text-[10px] px-2.5 py-1 rounded">Klaim!</button>` : `<span class="font-mono-print text-[10px] text-[#5c3a21]">Berjalan</span>`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleQuestDrawer() {
+            document.getElementById('quest-drawer').classList.toggle('hidden');
+            renderQuests();
+        }
+
+        function addXp(amount) {
+            gameState.xp += amount;
+            while (gameState.xp >= gameState.xpToNext) {
+                gameState.xp -= gameState.xpToNext;
+                gameState.level += 1;
+                gameState.xpToNext = Math.round(gameState.xpToNext * 1.35);
+                const tierName = WARUNG_TIERS[Math.min(WARUNG_TIERS.length - 1, gameState.level - 1)];
+                showFeedback('🎉', `NAIK LEVEL ${gameState.level}!`, `Warung naik kelas jadi ${tierName}!`);
+            }
+            updateHUD();
+        }
+
+        function openUpgradeModal() {
+            renderUpgradeModal();
+            document.getElementById('upgrade-modal').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function buyUpgrade(upId) {
+            const cfg = UPGRADES_CONFIG.find(u => u.id === upId);
+            if (!cfg) return;
+            const curLv = gameState.upgrades[upId] || 1;
+            if (curLv >= cfg.maxLv) return;
+
+            const cost = cfg.baseCost * curLv;
+            if (gameState.money < cost) {
+                sfx.playError();
+                showFeedback('💸', 'Kas Warung Kurang!', `Butuh ${formatRupiah(cost)} buat upgrade ${cfg.name}.`);
+                return;
+            }
+
+            gameState.money -= cost;
+            gameState.upgrades[upId] = curLv + 1;
+            if (upId === 'assistant' && assistantMesh) assistantMesh.visible = true;
+            sfx.playChaChing();
+            updateHUD();
+            renderUpgradeModal();
+        }
+
+        function renderUpgradeModal() {
+            const tierName = WARUNG_TIERS[Math.min(WARUNG_TIERS.length - 1, gameState.level - 1)];
+            document.getElementById('upgrade-tier-subtitle').textContent = `Status: Lv.${gameState.level} ${tierName}`;
+            document.getElementById('upgrade-list').innerHTML = UPGRADES_CONFIG.map(cfg => {
+                const curLv = gameState.upgrades[cfg.id] || 1;
+                const isMax = curLv >= cfg.maxLv;
+                const cost = cfg.baseCost * curLv;
+                return `
+                    <div class="bg-[#f3dfb9] border-2 border-[#2b1d12] rounded-lg p-2.5 flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-base">${cfg.icon}</span>
+                                <span class="font-display font-extrabold text-xs sm:text-sm">${cfg.name}</span>
+                                <span class="font-mono-print text-[10px] font-bold bg-[#2d6a4f] text-white px-1.5 py-0.5 rounded">Lv.${curLv}/${cfg.maxLv}</span>
+                            </div>
+                            <p class="font-mono-print text-[10px] text-[#4a321f] mt-0.5 leading-snug">${cfg.desc}</p>
+                        </div>
+                        <button onclick="buyUpgrade('${cfg.id}')" ${isMax ? 'disabled' : ''} class="btn-tactile shrink-0 px-3 py-1.5 rounded-lg font-display font-extrabold text-xs ${isMax ? 'bg-slate-400 text-slate-800 cursor-not-allowed' : 'bg-[#e59819] text-[#2b1d12]'}">
+                            ${isMax ? 'MAX' : formatRupiah(cost)}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyPlayModeUI() {
+            const btn = document.getElementById('btn-play-mode');
+            const icon = document.getElementById('mode-icon');
+            const label = document.getElementById('mode-label');
+            if (gameState.playMode === 'PRASMANAN') {
+                btn.className = 'btn-tactile tap-target px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold bg-[#2d6a4f] text-[#faf6eb] flex items-center gap-1';
+                icon.textContent = '🥗';
+                label.textContent = 'Prasmanan';
+            } else {
+                btn.className = 'btn-tactile tap-target px-2 py-1 rounded-lg text-[10px] sm:text-xs font-extrabold bg-[#e59819] text-[#2b1d12] flex items-center gap-1';
+                icon.textContent = '👨‍🍳';
+                label.textContent = 'Juragan';
+            }
+        }
+
+        function togglePlayMode() {
+            if (gameState.phase === 'STOVE_MINIGAME') return;
+            gameState.playMode = gameState.playMode === 'JURAGAN' ? 'PRASMANAN' : 'JURAGAN';
+            applyPlayModeUI();
+            document.getElementById('spicy-vignette').style.opacity = '0';
+            spawnNextCustomer();
+        }
+
+        function startGame(chosenMode = 'JURAGAN') {
+            document.getElementById('tutorial-modal').classList.add('hidden');
+            sfx.init();
+            gameState.playMode = chosenMode;
+            applyPlayModeUI();
+            if (!gameState.started) {
+                gameState.started = true;
+                rollMarketPrices();
+                initQuests();
+                buildQuickIngredientUI();
+            }
+            spawnNextCustomer();
+        }
+
+        function openTutorial() {
+            document.getElementById('tutorial-modal').classList.remove('hidden');
+        }
+
+        function toggleOrderSlip() {
+            if (window.innerWidth >= 768) return;
+            gameState.notaCollapsed = !gameState.notaCollapsed;
+            document.getElementById('nota-body').classList.toggle('hidden', gameState.notaCollapsed);
+            document.getElementById('btn-toggle-nota').textContent = gameState.notaCollapsed ? '▼' : '▲';
+        }
+
+        function buildQuickIngredientUI() {
+            const bar = document.getElementById('quick-ingredient-bar');
+            let hasLowStock = false;
+            bar.innerHTML = '';
+            INGREDIENTS.forEach((ing, idx) => {
+                const stok = gameState.stock[ing.id] || 0;
+                if (stok <= 2) hasLowStock = true;
+                const btn = document.createElement('button');
+                btn.className = `btn-tactile tap-target px-2 py-1 rounded flex items-center gap-1.5 shrink-0 text-xs font-extrabold ${stok === 0 ? 'bg-[#fee2e2] text-[#991b1b]' : 'bg-[#faf6eb] text-[#2b1d12]'}`;
+                btn.innerHTML = `
+                    <span class="hidden lg:inline-block font-mono-print text-[10px] bg-[#2b1d12] text-[#faf6eb] px-1 rounded-sm">${idx + 1}</span>
+                    <span class="text-base">${ing.icon}</span>
+                    <div class="text-left leading-tight">
+                        <div>${ing.name}</div>
+                        <div class="font-mono-print text-[9px] text-[#7c2d12]">Stok:${stok} • ${ing.price / 1000}rb</div>
+                    </div>
+                `;
+                btn.onclick = (ev) => addIngredientToWok(ing.id, ev.clientX, ev.clientY);
+                bar.appendChild(btn);
+            });
+            document.getElementById('low-stock-dot').classList.toggle('hidden', !hasLowStock);
+        }
+
+        function clearOnlineTimer() {
+            if (gameState.onlineTimerInterval) {
+                clearInterval(gameState.onlineTimerInterval);
+                gameState.onlineTimerInterval = null;
+            }
+        }
+
+        function spawnNextCustomer() {
+            clearOnlineTimer();
+            gameState.phase = 'COOK';
+            gameState.wokContents = {};
+            gameState.selectedBills = [];
+            gameState.preparedChange = 0;
+            gameState.uvChecked = false;
+            gameState.isFakeBill = false;
+            gameState.wantsKasbon = false;
+            gameState.sideDrink = null;
+            gameState.sideDrinkPrepared = false;
+
+            while (wokFoodGroup.children.length > 0) wokFoodGroup.remove(wokFoodGroup.children[0]);
+            while (servedFoodGroup.children.length > 0) servedFoodGroup.remove(servedFoodGroup.children[0]);
+            if (customerPaymentBillMesh) customerPaymentBillMesh.visible = false;
+            if (takeawayBoxGroup) takeawayBoxGroup.visible = false;
+            if (servingBowlGroup) servingBowlGroup.visible = true;
+
+            if (gameState.playMode === 'PRASMANAN') {
+                gameState.orderMode = 'PRASMANAN';
+                const cravingPool = INGREDIENTS.filter(i => i.id !== 'cabai');
+                gameState.prasmananCravingId = cravingPool[Math.floor(Math.random() * cravingPool.length)].id;
+                gameState.buyerWallet = 25000 + Math.floor(Math.random() * 4) * 5000;
+                gameState.currentCustomer = {
+                    name: 'Abang Penjual (NPC)', avatar: '👨‍🍳', shape: 'box', shirt: 0x2d6a4f, skin: 0xd99b72, hat: 'cap', glasses: false,
+                    quote: '"Silakan ambil sendiri toppingnya Dek!"'
+                };
+                rebuildCustomerMesh(gameState.currentCustomer);
+                customerGroup.position.set(0.15, 0, -2.55);
+                gameState.order = {};
+                gameState.totalBill = 0;
+                setupOrderModeUI();
+                setCameraMode('COOK');
+                document.getElementById('cooking-controls').classList.remove('hidden');
+                document.getElementById('cashier-panel').classList.add('hidden');
+                updateHUD();
+                renderOrderTicket();
+                return;
+            }
+
+            maybeTriggerStreetEvent();
+
+            const roll = Math.random();
+            const onlineChance = 0.22 + (gameState.upgrades.tablet - 1) * 0.08;
+            if (roll < onlineChance && gameState.customerNumber >= 2) gameState.orderMode = 'ONLINE';
+            else if (roll < onlineChance + 0.34 && gameState.customerNumber >= 2) gameState.orderMode = 'BUDGET';
+            else gameState.orderMode = 'EXACT';
+
+            let profile;
+            if (gameState.orderMode === 'ONLINE') {
+                profile = CUSTOMERS_DATA.find(c => c.hat === 'helmet') || CUSTOMERS_DATA[0];
+                if (takeawayBoxGroup) takeawayBoxGroup.visible = true;
+                if (servingBowlGroup) servingBowlGroup.visible = false;
+            } else {
+                const walkIns = CUSTOMERS_DATA.filter(c => c.hat !== 'helmet');
+                profile = { ...walkIns[(gameState.customerNumber - 1) % walkIns.length] };
+            }
+            gameState.currentCustomer = profile;
+
+            rebuildCustomerMesh(profile);
+            customerGroup.position.set(0.15, 0, -2.55);
+
+            const order = {};
+            const basePool = INGREDIENTS.filter(i => i.id !== 'cabai');
+            const shuffled = [...basePool].sort(() => Math.random() - 0.5);
+            const itemCount = Math.min(4, 2 + Math.floor(gameState.customerNumber / 3));
+
+            let bill = 0;
+            for (let i = 0; i < itemCount; i++) {
+                const item = shuffled[i];
+                const qty = Math.floor(Math.random() * 2) + 1;
+                order[item.id] = qty;
+                bill += item.price * qty;
+            }
+            const spicyLevel = Math.floor(Math.random() * 3) + 1;
+            order['cabai'] = spicyLevel;
+            bill += 1000 * spicyLevel;
+
+            // Optional Side Drink (Suite 3)
+            if (Math.random() < 0.38 && gameState.orderMode !== 'ONLINE') {
+                const drink = SIDE_DRINKS[Math.floor(Math.random() * SIDE_DRINKS.length)];
+                gameState.sideDrink = drink;
+                bill += drink.price;
+                // Assistant Ujang auto-prepares side drink if hired!
+                if (gameState.upgrades.assistant >= 2) {
+                    gameState.sideDrinkPrepared = true;
+                }
+            }
+
+            gameState.order = order;
+
+            if (gameState.orderMode === 'BUDGET') {
+                const budgets = [15000, 18000, 20000, 22000, 25000];
+                const chosenBudget = budgets[Math.floor(Math.random() * budgets.length)];
+                gameState.budgetTarget = chosenBudget;
+                gameState.totalBill = chosenBudget;
+                bill = chosenBudget;
+
+                if (Math.random() > 0.3) {
+                    const reqIng = basePool[Math.floor(Math.random() * basePool.length)];
+                    gameState.budgetCravingId = reqIng.id;
+                    profile.quote = `"Budget ${formatRupiah(chosenBudget)}, wajib ada ${reqIng.name}!"`;
+                } else {
+                    gameState.budgetCravingId = null;
+                    profile.quote = `"Bebas racik apa aja asal pas ${formatRupiah(chosenBudget)}!"`;
+                }
+            } else {
+                gameState.budgetTarget = 0;
+                gameState.budgetCravingId = null;
+                gameState.totalBill = bill;
+            }
+
+            const notes = [20000, 30000, 40000, 50000, 60000, 70000, 100000];
+            let paid = notes.find(n => n >= bill) || Math.ceil(bill / 10000) * 10000;
+            if (paid === bill && bill < 50000 && Math.random() > 0.35) {
+                paid = bill <= 20000 ? 20000 : 50000;
+                if (paid === bill) paid += 10000;
+            }
+            gameState.customerPaid = gameState.orderMode === 'ONLINE' ? bill : paid;
+
+            // Suite 2: Counterfeit Bill chance (on >= Rp 50.000 cash notes) & Neighbor Kasbon chance
+            if (gameState.orderMode !== 'ONLINE' && !profile.isVip) {
+                if (paid >= 50000 && Math.random() < 0.22 && gameState.customerNumber >= 2) {
+                    gameState.isFakeBill = true;
+                } else if (Math.random() < 0.22 && gameState.customerNumber >= 2) {
+                    gameState.wantsKasbon = true;
+                }
+            }
+
+            if (customerPaymentBillMesh) {
+                customerPaymentBillMesh.material.color.setHex(paid >= 100000 ? 0xdc2626 : 0x2563eb);
+            }
+
+            if (gameState.orderMode === 'ONLINE') {
+                gameState.onlineTimer = 45 + (gameState.upgrades.tablet - 1) * 8;
+                const badge = document.getElementById('online-timer-badge');
+                if (badge) badge.textContent = `${gameState.onlineTimer}s`;
+                gameState.onlineTimerInterval = setInterval(() => {
+                    if (gameState.phase !== 'COOK') return;
+                    gameState.onlineTimer -= 1;
+                    if (badge) badge.textContent = `${gameState.onlineTimer}s`;
+                    if (gameState.onlineTimer <= 0) {
+                        clearOnlineTimer();
+                        gameState.money -= 6000;
+                        gameState.reputation = Math.max(1, gameState.reputation - 1);
+                        sfx.playError();
+                        showFeedback('⏰', 'Orderan Ojol Hangus!', 'Kelamaan masak! Denda batal -Rp 6.000.');
+                        gameState.customerNumber++;
+                        updateHUD();
+                        setTimeout(() => spawnNextCustomer(), 1600);
+                    }
+                }, 1000);
+            }
+
+            setupOrderModeUI();
+            setCameraMode('COOK');
+            gameState.notaCollapsed = false;
+            document.getElementById('nota-body').classList.remove('hidden');
+            document.getElementById('btn-toggle-nota').textContent = '▲';
+            document.getElementById('cooking-controls').classList.remove('hidden');
+            document.getElementById('cashier-panel').classList.add('hidden');
+            buildQuickIngredientUI();
+            updateHUD();
+            renderOrderTicket();
+        }
+
+        function setupOrderModeUI() {
+            const onlineBanner = document.getElementById('online-order-banner');
+            const vipBanner = document.getElementById('vip-vlogger-banner');
+            const exactSec = document.getElementById('exact-order-section');
+            const budgetSec = document.getElementById('budget-order-section');
+            const prasmSec = document.getElementById('prasmanan-order-section');
+            const sideSec = document.getElementById('side-drink-section');
+            const typeBadge = document.getElementById('order-type-badge');
+            const cookLabel = document.getElementById('btn-cook-label');
+
+            onlineBanner.classList.add('hidden');
+            vipBanner.classList.add('hidden');
+            exactSec.classList.add('hidden');
+            budgetSec.classList.add('hidden');
+            prasmSec.classList.add('hidden');
+            sideSec.classList.add('hidden');
+
+            if (gameState.currentCustomer && gameState.currentCustomer.isVip) {
+                vipBanner.classList.remove('hidden');
+            }
+
+            if (gameState.sideDrink) {
+                sideSec.classList.remove('hidden');
+                document.getElementById('side-drink-label').textContent = `${gameState.sideDrink.icon} Tambahan: ${gameState.sideDrink.name}`;
+                const btnDrink = document.getElementById('btn-prep-drink');
+                if (gameState.sideDrinkPrepared) {
+                    btnDrink.textContent = '✓ Siap (Ujang)';
+                    btnDrink.className = 'bg-[#2d6a4f] text-white px-2 py-0.5 rounded border border-[#2b1d12] font-bold';
+                } else {
+                    btnDrink.textContent = 'Siapkan';
+                    btnDrink.className = 'bg-[#0284c7] text-white px-2 py-0.5 rounded border border-[#2b1d12] font-bold';
+                }
+            }
+
+            if (gameState.orderMode === 'ONLINE') {
+                onlineBanner.classList.remove('hidden');
+                exactSec.classList.remove('hidden');
+                typeBadge.textContent = 'OJOL QRIS';
+                typeBadge.className = 'font-mono-print text-[9px] font-bold bg-[#16a34a] text-white px-1.5 py-0.5 rounded-sm';
+                cookLabel.textContent = 'Masak Order Ojol';
+            } else if (gameState.orderMode === 'BUDGET') {
+                budgetSec.classList.remove('hidden');
+                typeBadge.textContent = 'BEBAS BUDGET';
+                typeBadge.className = 'font-mono-print text-[9px] font-bold bg-[#e59819] text-[#2b1d12] px-1.5 py-0.5 rounded-sm';
+                cookLabel.textContent = 'Nyalakan Kompor';
+            } else if (gameState.orderMode === 'PRASMANAN') {
+                prasmSec.classList.remove('hidden');
+                typeBadge.textContent = 'PRASMANAN';
+                typeBadge.className = 'font-mono-print text-[9px] font-bold bg-[#2d6a4f] text-[#faf6eb] px-1.5 py-0.5 rounded-sm';
+                cookLabel.textContent = 'Masak Punya Sendiri';
+            } else {
+                exactSec.classList.remove('hidden');
+                typeBadge.textContent = 'RESEP PAS';
+                typeBadge.className = 'font-mono-print text-[9px] font-bold bg-[#2d6a4f] text-[#faf6eb] px-1.5 py-0.5 rounded-sm';
+                cookLabel.textContent = 'Nyalakan Kompor';
+            }
+        }
+
+        function getWokTotalPrice() {
+            let sum = 0;
+            const stockBonus = (gameState.upgrades.stock - 1) * 500;
+            Object.entries(gameState.wokContents).forEach(([id, count]) => {
+                const ing = INGREDIENTS.find(i => i.id === id);
+                if (ing) sum += (ing.price + stockBonus) * count;
+            });
+            return sum;
+        }
+
+        function addIngredientToWok(ingId, screenX, screenY) {
+            if (gameState.phase !== 'COOK') return;
+            const ing = INGREDIENTS.find(i => i.id === ingId);
+            if (!ing) return;
+
+            if (gameState.playMode === 'JURAGAN') {
+                const curStock = gameState.stock[ingId] || 0;
+                if (curStock <= 0) {
+                    sfx.playError();
+                    showFeedback('📦', `Stok ${ing.name} Habis!`, 'Klik tombol 🛒 Stok di atas untuk belanja di pasar!');
+                    return;
+                }
+                gameState.stock[ingId] = curStock - 1;
+            }
+
+            gameState.wokContents[ingId] = (gameState.wokContents[ingId] || 0) + 1;
+            sfx.playSizzle();
+
+            const bowlGroup = bowlGroupsById[ingId];
+            if (bowlGroup) bowlGroup.position.y = 1.18;
+            if (screenX && screenY) spawnFloatingCallout(`+1 ${ing.icon} ${ing.name}`, screenX, screenY);
+
+            const piece = createIngredientPieceMesh(ingId);
+            piece.scale.set(1.3, 1.3, 1.3);
+            piece.userData.wokIngredientId = ingId;
+
+            const startPos = bowlGroup ? bowlGroup.position.clone().add(new THREE.Vector3(0, 0.25, 0)) : new THREE.Vector3(0.15, 1.45, 0);
+            const targetPos = new THREE.Vector3((Math.random() - 0.5) * 0.42, 0.02 + Math.random() * 0.04, (Math.random() - 0.5) * 0.42);
+            piece.position.copy(startPos);
+            scene.add(piece);
+
+            flyingItems.push({
+                mesh: piece,
+                start: startPos,
+                end: new THREE.Vector3(-1.15 + targetPos.x, 1.41 + targetPos.y, 0.12 + targetPos.z),
+                progress: 0,
+                localTarget: targetPos
+            });
+
+            for (let i = 0; i < 4; i++) spawnSteamParticle(-1.15, 1.44, 0.12);
+            buildQuickIngredientUI();
+            renderOrderTicket();
+        }
+
+        function removeOneIngredientFromWok(ingId, screenX, screenY) {
+            if (gameState.phase !== 'COOK') return;
+            const currentQty = gameState.wokContents[ingId] || 0;
+            if (currentQty <= 0) return;
+
+            const ing = INGREDIENTS.find(i => i.id === ingId);
+            gameState.wokContents[ingId] = currentQty - 1;
+            if (gameState.wokContents[ingId] === 0) delete gameState.wokContents[ingId];
+
+            if (gameState.playMode === 'JURAGAN') {
+                gameState.stock[ingId] = (gameState.stock[ingId] || 0) + 1;
+            }
+
+            if (wokFoodGroup && wokFoodGroup.children.length > 0) {
+                let removedIdx = -1;
+                for (let i = wokFoodGroup.children.length - 1; i >= 0; i--) {
+                    if (wokFoodGroup.children[i].userData.wokIngredientId === ingId) {
+                        removedIdx = i;
+                        break;
+                    }
+                }
+                if (removedIdx !== -1) wokFoodGroup.remove(wokFoodGroup.children[removedIdx]);
+                else wokFoodGroup.remove(wokFoodGroup.children[wokFoodGroup.children.length - 1]);
+            }
+
+            const bowlGroup = bowlGroupsById[ingId];
+            if (bowlGroup) bowlGroup.position.y = 1.18;
+            if (screenX && screenY && ing) spawnFloatingCallout(`Balikin -1 ${ing.icon}`, screenX, screenY);
+
+            sfx.playPaperSnap();
+            buildQuickIngredientUI();
+            renderOrderTicket();
+        }
+
+        function resetWok() {
+            if (gameState.phase !== 'COOK') return;
+            if (gameState.playMode === 'JURAGAN') {
+                Object.entries(gameState.wokContents).forEach(([id, qty]) => {
+                    gameState.stock[id] = (gameState.stock[id] || 0) + qty;
+                });
+            }
+            gameState.wokContents = {};
+            while (wokFoodGroup.children.length > 0) wokFoodGroup.remove(wokFoodGroup.children[0]);
+            sfx.playError();
+            buildQuickIngredientUI();
+            renderOrderTicket();
+        }
+
+        // --- CASHIER PHASE ---
+        function enterCashierPhase() {
+            gameState.phase = 'CASHIER';
+            setCameraMode('CASHIER');
+
+            if (window.innerWidth < 768) {
+                gameState.notaCollapsed = true;
+                document.getElementById('nota-body').classList.add('hidden');
+                document.getElementById('btn-toggle-nota').textContent = '▼';
+            }
+
+            document.getElementById('cooking-controls').classList.add('hidden');
+            document.getElementById('cashier-panel').classList.remove('hidden');
+
+            const tunaiView = document.getElementById('cashier-tunai-view');
+            const onlineView = document.getElementById('cashier-online-view');
+
+            if (gameState.orderMode === 'ONLINE' || gameState.orderMode === 'PRASMANAN') {
+                tunaiView.classList.add('hidden');
+                onlineView.classList.remove('hidden');
+                if (customerPaymentBillMesh) customerPaymentBillMesh.visible = false;
+
+                const coolingBtn = document.getElementById('btn-buy-cooling-drink');
+                const cabaiCount = gameState.wokContents['cabai'] || 0;
+
+                if (gameState.orderMode === 'PRASMANAN') {
+                    coolingBtn.classList.toggle('hidden', cabaiCount < 2);
+                    document.getElementById('lcd-col1-label').textContent = 'Harga Porsimu';
+                    document.getElementById('lcd-col2-label').textContent = 'Metode Bayar';
+                    document.getElementById('lcd-col3-label').textContent = 'Sisa Dompet';
+                    document.getElementById('cash-total').textContent = formatRupiah(gameState.totalBill);
+                    document.getElementById('cash-paid').textContent = 'QRIS';
+                    document.getElementById('cash-prepared').textContent = formatRupiah(gameState.buyerWallet - gameState.totalBill);
+                    document.getElementById('qris-title').textContent = 'Bayar Seblak Prasmananmu';
+                    document.getElementById('qris-desc').textContent = `Scan QRIS warung sebesar ${formatRupiah(gameState.totalBill)} untuk menikmati seblak!`;
+                    document.getElementById('btn-qris-label').textContent = `Bayar ${formatRupiah(gameState.totalBill)} & Makan!`;
+                } else {
+                    coolingBtn.classList.add('hidden');
+                    document.getElementById('lcd-col1-label').textContent = 'Total Aplikasi';
+                    document.getElementById('lcd-col2-label').textContent = 'OjolPay / QRIS';
+                    document.getElementById('lcd-col3-label').textContent = 'Status EDC';
+                    document.getElementById('cash-total').textContent = formatRupiah(gameState.totalBill);
+                    document.getElementById('cash-paid').textContent = formatRupiah(gameState.totalBill);
+                    document.getElementById('cash-prepared').textContent = 'LUNAS';
+                    document.getElementById('qris-title').textContent = 'Orderan Online Food Siap!';
+                    document.getElementById('qris-desc').textContent = 'Verifikasi nominal di mesin EDC & serahkan ke Bang Ojol.';
+                    document.getElementById('btn-qris-label').textContent = 'Konfirmasi Bayar QRIS & Serahkan';
+                }
+            } else {
+                tunaiView.classList.remove('hidden');
+                onlineView.classList.add('hidden');
+                if (customerPaymentBillMesh) customerPaymentBillMesh.visible = true;
+
+                // Reset UV Scanner & Kasbon UI
+                document.getElementById('uv-status-text').textContent = 'Cek keaslian uang pembeli sebelum kasih kembalian!';
+                document.getElementById('btn-reject-fake').classList.add('hidden');
+                document.getElementById('btn-accept-kasbon').classList.toggle('hidden', !gameState.wantsKasbon);
+
+                document.getElementById('lcd-col1-label').textContent = 'Total Belanja';
+                document.getElementById('lcd-col2-label').textContent = 'Uang Pembeli';
+                document.getElementById('lcd-col3-label').textContent = 'Kembalianmu';
+                document.getElementById('cust-quote').textContent = gameState.wantsKasbon
+                    ? '"Boleh masuk Buku Kasbon dulu Bang? Besok dilunasin!"'
+                    : `"Nih uangnya ${formatRupiah(gameState.customerPaid)} Bang!"`;
+                updateCashierUI();
+            }
+        }
+
+        function confirmOnlinePayment() {
+            if (gameState.phase !== 'CASHIER') return;
+
+            if (gameState.orderMode === 'PRASMANAN') {
+                gameState.buyerWallet -= gameState.totalBill;
+                document.getElementById('spicy-vignette').style.opacity = '0';
+                const satisfied = !gameState.prasmananCravingId || (gameState.wokContents[gameState.prasmananCravingId] || 0) >= 1;
+                const earnedXp = satisfied ? 35 : 20;
+                addXp(earnedXp);
+                advanceQuest('prasmanan_ok', 1);
+                sfx.playChaChing();
+                showFeedback('🍲', satisfied ? 'Ngidam Terpenuhi!' : 'Seblak Habis Lahap!', `Bayar ${formatRupiah(gameState.totalBill)} & dapat +${earnedXp} XP!`);
+                updateHUD();
+                setTimeout(() => spawnNextCustomer(), 1700);
+                return;
+            }
+
+            const wokCost = getWokTotalPrice();
+            if (!gameState.orderPassed) {
+                const loss = Math.max(5000, Math.round(wokCost * 0.75));
+                gameState.money -= loss;
+                gameState.reputation = Math.max(1, gameState.reputation - 1);
+                sfx.playError();
+                showFeedback('📉', 'Komplain Order Online!', `Pesanan salah! Saldo dipotong ganti rugi -${formatRupiah(loss)}!`);
+            } else {
+                const fypMult = gameState.fypOrdersLeft > 0 ? 2 : 1;
+                if (gameState.fypOrdersLeft > 0) gameState.fypOrdersLeft -= 1;
+                const onlineBonus = (2500 + (gameState.upgrades.tablet - 1) * 1500 + (gameState.upgrades.stove - 1) * 1000) * fypMult;
+                const earned = gameState.totalBill + onlineBonus;
+                gameState.money += earned;
+                gameState.reputation = Math.min(5, gameState.reputation + 1);
+                addXp(35);
+                advanceQuest('serve_clean', 1);
+                advanceQuest('online_ok', 1);
+                sfx.playChaChing();
+                showFeedback('🛵', 'Order Online Sukses!', `Saldo QRIS masuk +${formatRupiah(earned)}!`);
+            }
+
+            gameState.customerNumber++;
+            updateHUD();
+            checkBankKelilingTrigger();
+            setTimeout(() => spawnNextCustomer(), 1800);
+        }
+
+        function addChange(amount) {
+            if (gameState.phase !== 'CASHIER') return;
+            gameState.preparedChange += amount;
+            gameState.selectedBills.push(amount);
+            if (amount === 500) sfx.playCoin();
+            else sfx.playPaperSnap();
+            updateCashierUI();
+        }
+
+        function removeChangeAt(index) {
+            if (gameState.phase !== 'CASHIER') return;
+            const removed = gameState.selectedBills.splice(index, 1)[0];
+            gameState.preparedChange -= removed;
+            sfx.playPaperSnap();
+            updateCashierUI();
+        }
+
+        function resetChange() {
+            if (gameState.phase !== 'CASHIER') return;
+            gameState.preparedChange = 0;
+            gameState.selectedBills = [];
+            sfx.playTone(300, 'sine', 0.1, 0.1);
+            updateCashierUI();
+        }
+
+        function updateCashierUI() {
+            document.getElementById('cash-total').textContent = formatRupiah(gameState.totalBill);
+            document.getElementById('cash-paid').textContent = formatRupiah(gameState.customerPaid);
+            document.getElementById('cash-prepared').textContent = formatRupiah(gameState.preparedChange);
+
+            const preview = document.getElementById('change-stack-preview');
+            if (gameState.selectedBills.length === 0) {
+                preview.innerHTML = '<span class="font-mono-print text-[10px] text-[#a88b68] italic">Pilih pecahan uang di bawah...</span>';
+            } else {
+                preview.innerHTML = gameState.selectedBills.map((val, idx) => {
+                    const bg = val === 50000 ? 'bg-[#2563eb] text-white' :
+                               val === 20000 ? 'bg-[#15803d] text-white' :
+                               val === 10000 ? 'bg-[#6d28d9] text-white' :
+                               val === 5000  ? 'bg-[#b45309] text-white' :
+                               val === 2000  ? 'bg-[#475569] text-white' :
+                               val === 1000  ? 'bg-[#4d7c0f] text-white' :
+                               'bg-[#eab308] text-[#2b1d12]';
+                    const label = val >= 1000 ? `${val / 1000}rb` : '500';
+                    return `<button onclick="removeChangeAt(${idx})" class="stacked-bill-chip ${bg} font-mono-print text-[10px] font-bold px-2 py-0.5 rounded-sm shrink-0">${label} ×</button>`;
+                }).join('');
+            }
+        }
+
+        function submitChange() {
+            if (gameState.phase !== 'CASHIER') return;
+
+            // If customer gave fake bill and player didn't reject it!
+            if (gameState.isFakeBill) {
+                const loss = gameState.customerPaid + gameState.preparedChange;
+                gameState.money -= loss;
+                gameState.reputation = Math.max(1, gameState.reputation - 1);
+                sfx.playError();
+                showFeedback('😱', 'Tertipu Uang Palsu!', `Kamu terima uang palsu & kasih kembalian! Rugi -${formatRupiah(loss)}!`);
+                gameState.customerNumber++;
+                updateHUD();
+                checkBankKelilingTrigger();
+                setTimeout(() => spawnNextCustomer(), 1950);
+                return;
+            }
+
+            const expectedChange = gameState.customerPaid - gameState.totalBill;
+            const diff = gameState.preparedChange - expectedChange;
+            const wokCost = getWokTotalPrice();
+            const fypMult = gameState.fypOrdersLeft > 0 ? 2 : 1;
+            const upgradeBonus = ((gameState.upgrades.stove - 1) * 1000 + (gameState.upgrades.wok - 1) * 1500) * fypMult;
+
+            if (!gameState.orderPassed) {
+                const ingredientLoss = Math.max(6000, Math.round(wokCost * 0.8));
+                const extraChangePenalty = diff > 0 ? diff : 0;
+                const totalLoss = ingredientLoss + extraChangePenalty;
+                gameState.money -= totalLoss;
+                gameState.reputation = Math.max(1, gameState.reputation - 1);
+                sfx.playError();
+                showFeedback('📉', 'Rugi Bahan & Komplain!', `Pesanan salah! Kas warung rugi -${formatRupiah(totalLoss)}!`);
+            } else if (diff === 0) {
+                if (gameState.fypOrdersLeft > 0) gameState.fypOrdersLeft -= 1;
+                if (gameState.currentCustomer && gameState.currentCustomer.isVip) {
+                    gameState.fypOrdersLeft = 3;
+                    showFeedback('📸', 'MASUK FYP TIKTOK!', 'Food Vlogger puas! 3 pembeli berikutnya dapat 2X TIP!');
+                } else {
+                    const tip = 2500 * fypMult + upgradeBonus;
+                    const earned = gameState.totalBill + tip;
+                    gameState.money += earned;
+                    showFeedback('🤑', 'Transaksi Sempurna!', `Kembalian pas! Masuk +${formatRupiah(earned)}!`);
+                }
+                if (gameState.currentCustomer && gameState.currentCustomer.isVip) {
+                    gameState.money += gameState.totalBill + 5000;
+                }
+                gameState.reputation = Math.min(5, gameState.reputation + 1);
+                addXp(30);
+                advanceQuest('serve_clean', 1);
+                if (gameState.orderMode === 'BUDGET') advanceQuest('budget_ok', 1);
+                sfx.playChaChing();
+            } else if (diff < 0) {
+                const penalty = Math.abs(diff) + 3000;
+                gameState.money -= penalty;
+                gameState.reputation = Math.max(1, gameState.reputation - 1);
+                sfx.playError();
+                showFeedback('😠', 'Kembalian Kurang Bang!', `Harusnya ${formatRupiah(expectedChange)}! Denda -${formatRupiah(penalty)}.`);
+            } else {
+                const loss = diff;
+                gameState.money += (gameState.totalBill - loss);
+                sfx.playError();
+                showFeedback('💸', 'Kelebihan Ngasih Kembalian!', `Harusnya ${formatRupiah(expectedChange)}, tekor -${formatRupiah(loss)} deh!`);
+            }
+
+            gameState.customerNumber++;
+            updateHUD();
+            checkBankKelilingTrigger();
+            setTimeout(() => spawnNextCustomer(), 1950);
+        }
+
+        // --- UI HELPERS ---
+        function setCameraMode(mode) {
+            gameState.cameraMode = mode;
+            userOrbitOffset = { theta: 0, phi: 0 };
+        }
+
+        function updateHUD() {
+            const tierName = WARUNG_TIERS[Math.min(WARUNG_TIERS.length - 1, gameState.level - 1)];
+            document.getElementById('hud-warung-title').textContent = tierName;
+            document.getElementById('hud-level-badge').textContent = `LV.${gameState.level}`;
+            document.getElementById('hud-day-badge').textContent = `HARI ${gameState.day}`;
+            const xpPct = Math.min(100, Math.round((gameState.xp / gameState.xpToNext) * 100));
+            document.getElementById('hud-xp-bar').style.width = `${xpPct}%`;
+
+            document.getElementById('hud-fyp-badge').classList.toggle('hidden', gameState.fypOrdersLeft <= 0);
+
+            const walletLabel = document.getElementById('hud-wallet-label');
+            const moneyEl = document.getElementById('hud-money');
+            const minusTag = document.getElementById('hud-minus-tag');
+            const moneyBox = document.getElementById('hud-money-box');
+
+            if (gameState.playMode === 'PRASMANAN') {
+                walletLabel.textContent = 'Dompet Pembeli';
+                moneyEl.textContent = formatRupiah(gameState.buyerWallet);
+                moneyEl.className = 'font-lcd text-sm sm:text-lg text-[#fde047] tracking-wide leading-tight';
+                minusTag.classList.add('hidden');
+                moneyBox.style.borderColor = '#1a0f08';
+            } else {
+                walletLabel.textContent = 'Kas Warung';
+                moneyEl.textContent = formatRupiah(gameState.money);
+                if (gameState.money < 0) {
+                    moneyEl.className = 'font-lcd text-sm sm:text-lg text-[#f87171] tracking-wide leading-tight';
+                    minusTag.classList.remove('hidden');
+                    moneyBox.style.borderColor = '#dc2626';
+                } else {
+                    moneyEl.className = 'font-lcd text-sm sm:text-lg text-[#4ade80] tracking-wide leading-tight';
+                    minusTag.classList.add('hidden');
+                    moneyBox.style.borderColor = '#1a0f08';
+                }
+            }
+
+            document.getElementById('hud-stars').textContent = '⭐'.repeat(gameState.reputation);
+        }
+
+        function renderOrderTicket() {
+            const cust = gameState.currentCustomer;
+            if (!cust) return;
+
+            document.getElementById('cust-avatar').textContent = cust.avatar;
+            document.getElementById('cust-name').textContent = cust.name;
+            document.getElementById('cust-quote').textContent = cust.quote;
+
+            const wokPrice = getWokTotalPrice();
+
+            if (gameState.orderMode === 'BUDGET') {
+                document.getElementById('budget-target-text').textContent = formatRupiah(gameState.budgetTarget);
+                const curEl = document.getElementById('budget-current-text');
+                curEl.textContent = formatRupiah(wokPrice);
+                curEl.className = wokPrice > gameState.budgetTarget
+                    ? 'text-[#dc2626] font-extrabold'
+                    : (wokPrice >= Math.floor(gameState.budgetTarget * 0.72) ? 'text-[#15803d] font-extrabold' : 'text-[#2b1d12]');
+
+                const cravingBadge = document.getElementById('budget-craving-badge');
+                if (gameState.budgetCravingId) {
+                    const reqIng = INGREDIENTS.find(i => i.id === gameState.budgetCravingId);
+                    const hasIt = (gameState.wokContents[gameState.budgetCravingId] || 0) >= 1;
+                    cravingBadge.textContent = `${hasIt ? '✓' : '•'} Syarat: Wajib ada ${reqIng.icon} ${reqIng.name}!`;
+                    cravingBadge.className = `mt-1 px-2 py-0.5 rounded border text-[10px] font-bold ${hasIt ? 'bg-[#dcfce7] border-[#2d6a4f] text-[#14532d]' : 'bg-[#faf6eb] border-[#2b1d12] text-[#7c2d12]'}`;
+                } else {
+                    cravingBadge.textContent = '✓ Syarat: Bebas pilih topping apa saja!';
+                    cravingBadge.className = 'mt-1 px-2 py-0.5 rounded bg-[#dcfce7] border border-[#2d6a4f] text-[10px] font-bold text-[#14532d]';
+                }
+            } else if (gameState.orderMode === 'PRASMANAN') {
+                const discount = gameState.jumatBerkahActive ? 0.5 : 1.0;
+                const finalPrice = Math.round((wokPrice * discount) / 500) * 500;
+                document.getElementById('prasmanan-total-text').textContent = formatRupiah(finalPrice);
+
+                const cabaiCount = gameState.wokContents['cabai'] || 0;
+                const spicePct = Math.min(100, cabaiCount * 28);
+                document.getElementById('spice-meter-bar').style.width = `${spicePct}%`;
+                document.getElementById('spice-level-text').textContent = spicePct >= 75 ? `Merah Membara (${spicePct}%)` : (spicePct >= 40 ? `Pedas Nikmat (${spicePct}%)` : `Aman (${spicePct}%)`);
+
+                const cravIng = INGREDIENTS.find(i => i.id === gameState.prasmananCravingId);
+                const hasCrav = cravIng && (gameState.wokContents[cravIng.id] || 0) >= 1;
+                document.getElementById('prasmanan-craving-text').textContent = cravIng
+                    ? `${hasCrav ? '✓' : '😋'} Ngidam hari ini: ${cravIng.icon} ${cravIng.name} (+Bonus XP)`
+                    : 'Ambil topping favoritmu di gerobak!';
+            } else {
+                const orderList = document.getElementById('order-items-list');
+                orderList.innerHTML = '';
+                let totalReqCount = 0;
+                let totalMatchedCount = 0;
+
+                INGREDIENTS.forEach(ing => {
+                    const req = gameState.order[ing.id];
+                    if (req) {
+                        const got = gameState.wokContents[ing.id] || 0;
+                        totalReqCount += req;
+                        totalMatchedCount += Math.min(got, req);
+                        const isMatch = got === req;
+                        const isOver = got > req;
+
+                        const li = document.createElement('li');
+                        li.className = `flex justify-between items-center px-2 py-0.5 rounded-sm border ${
+                            isMatch ? 'bg-[#dcfce7] border-[#2d6a4f] text-[#14532d]' :
+                            isOver  ? 'bg-[#fee2e2] border-[#c83e2b] text-[#7f1d1d]' :
+                                      'bg-[#faf6eb]/80 border-[#2b1d12]/30 text-[#2b1d12]'
+                        }`;
+                        li.innerHTML = `<span>${isMatch ? '✓ ' : ''}${ing.icon} ${ing.name}</span><span>${got}/${req}</span>`;
+                        orderList.appendChild(li);
+                    }
+                });
+
+                const pill = document.getElementById('nota-progress-pill');
+                if (pill) {
+                    pill.textContent = `${totalMatchedCount}/${totalReqCount}`;
+                    pill.className = `font-mono-print text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${totalMatchedCount === totalReqCount ? 'bg-[#2d6a4f] text-[#faf6eb]' : 'bg-[#e59819] text-[#2b1d12]'}`;
+                }
+            }
+
+            const wokEntries = Object.entries(gameState.wokContents).filter(([_, c]) => c > 0);
+            const totalItems = wokEntries.reduce((acc, [_, c]) => acc + c, 0);
+            document.getElementById('wok-count-badge').textContent = `${totalItems} takaran`;
+
+            const wokListEl = document.getElementById('wok-current-list');
+            if (wokEntries.length === 0) {
+                wokListEl.textContent = 'Masih kosong. Klik wadah di gerobak!';
+            } else {
+                wokListEl.innerHTML = wokEntries.map(([id, count]) => {
+                    const item = INGREDIENTS.find(i => i.id === id);
+                    return `<button type="button" onclick="removeOneIngredientFromWok('${id}')" class="wok-pill-btn inline-flex items-center gap-1 bg-[#faf6eb] px-1.5 py-0.5 rounded-sm mr-1 mb-1 font-bold">${item.icon} ${count}x <span class="text-[#c83e2b]">-1</span></button>`;
+                }).join('');
+            }
+        }
+
+        function formatRupiah(num) {
+            if (num < 0) return '-Rp ' + Math.abs(num).toLocaleString('id-ID');
+            return 'Rp ' + num.toLocaleString('id-ID');
+        }
+
+        let feedbackTimeout;
+        function showFeedback(emoji, title, desc) {
+            const banner = document.getElementById('feedback-banner');
+            document.getElementById('feedback-emoji').textContent = emoji;
+            document.getElementById('feedback-title').textContent = title;
+            document.getElementById('feedback-desc').textContent = desc;
+            banner.classList.remove('hidden');
+            clearTimeout(feedbackTimeout);
+            feedbackTimeout = setTimeout(() => banner.classList.add('hidden'), 2200);
+        }
+
+        function spawnFloatingCallout(text, x, y) {
+            const el = document.createElement('div');
+            el.className = 'floating-callout text-xs sm:text-sm';
+            el.style.left = `${x - 35}px`;
+            el.style.top = `${y - 24}px`;
+            el.textContent = text;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 850);
+        }
+
+        function spawnSteamParticle(x, y, z) {
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.055 + Math.random() * 0.045, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.42 })
+            );
+            mesh.position.set(x + (Math.random() - 0.5) * 0.35, y, z + (Math.random() - 0.5) * 0.35);
+            scene.add(mesh);
+            steamParticles.push({ mesh, vy: 0.013 + Math.random() * 0.01, life: 1.0 });
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!renderer || !scene || !camera) return;
+            const elapsed = clock.getElapsedTime();
+
+            const target = getActiveCameraTarget(gameState.cameraMode);
+            const desiredPos = target.pos.clone();
+            desiredPos.x += Math.sin(userOrbitOffset.theta) * 1.35;
+            desiredPos.y += userOrbitOffset.phi * 1.15;
+
+            currentCamPos.lerp(desiredPos, 0.08);
+            currentCamLook.lerp(target.look, 0.08);
+            camera.position.copy(currentCamPos);
+            camera.lookAt(currentCamLook);
+
+            if (hangingBulbGroup) {
+                hangingBulbGroup.rotation.z = Math.sin(elapsed * 1.8) * 0.045;
+                hangingBulbGroup.rotation.x = Math.cos(elapsed * 1.3) * 0.025;
+            }
+
+            if (fanBladesGroup && gameState.decor.fan) {
+                fanBladesGroup.rotation.z += 0.25;
+            }
+
+            if (fairyLightsGroup && gameState.decor.fairyLights) {
+                fairyLightsGroup.children.forEach((bulb, i) => {
+                    const s = 0.85 + Math.sin(elapsed * 5 + i) * 0.25;
+                    bulb.scale.set(s, s, s);
+                });
+            }
+
+            Object.values(bowlGroupsById).forEach(bg => {
+                bg.position.y += (1.09 - bg.position.y) * 0.18;
+            });
+
+            if (ladleGroup) {
+                if (gameState.phase === 'STOVE_MINIGAME') {
+                    ladleGroup.position.x = Math.cos(elapsed * 14) * 0.16;
+                    ladleGroup.position.z = Math.sin(elapsed * 14) * 0.16;
+                } else {
+                    ladleGroup.position.lerp(new THREE.Vector3(0.22, 0.16, -0.15), 0.1);
+                }
+            }
+
+            if (customerGroup) {
+                if (customerGroup.position.z < -1.35) customerGroup.position.z += 0.032;
+                customerGroup.position.y = Math.abs(Math.sin(elapsed * 3.8)) * 0.028;
+            }
+
+            if (cashDrawerMesh) {
+                const targetDrawerZ = gameState.phase === 'CASHIER' ? 0.28 : 0.02;
+                cashDrawerMesh.position.z += (targetDrawerZ - cashDrawerMesh.position.z) * 0.14;
+            }
+
+            if (stoveFlameMesh) {
+                const heatScale = gameState.stoveHeat === 'HIGH' ? 1.25 : (gameState.stoveHeat === 'LOW' ? 0.82 : 1.0);
+                const scale = heatScale + Math.sin(elapsed * 22) * 0.06;
+                stoveFlameMesh.scale.set(scale, scale, 1);
+            }
+
+            for (let i = flyingItems.length - 1; i >= 0; i--) {
+                const item = flyingItems[i];
+                item.progress += 0.085;
+                if (item.progress >= 1) {
+                    scene.remove(item.mesh);
+                    item.mesh.position.copy(item.localTarget);
+                    wokFoodGroup.add(item.mesh);
+                    flyingItems.splice(i, 1);
+                } else {
+                    item.mesh.position.lerpVectors(item.start, item.end, item.progress);
+                    item.mesh.position.y += Math.sin(item.progress * Math.PI) * 0.42;
+                    item.mesh.rotation.x += 0.22;
+                    item.mesh.rotation.y += 0.22;
+                }
+            }
+
+            if (Math.random() < 0.13) spawnSteamParticle(-1.15, 1.42, 0.12);
+            for (let i = steamParticles.length - 1; i >= 0; i--) {
+                const p = steamParticles[i];
+                p.mesh.position.y += p.vy;
+                p.mesh.scale.multiplyScalar(1.015);
+                p.life -= 0.022;
+                p.mesh.material.opacity = Math.max(0, p.life * 0.38);
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    steamParticles.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function bootGame3D(retries = 0) {
+            if (typeof THREE === 'undefined') {
+                if (retries < 25 && !window.__threeLoadError) {
+                    setTimeout(() => bootGame3D(retries + 1), 150);
+                } else {
+                    showRuntimeError('Gagal memuat engine 3D Three.js. Cek koneksi internet kamu lalu muat ulang.');
+                }
+                return;
+            }
+            requestAnimationFrame(() => {
+                if (init3D()) {
+                    animate();
+                }
+            });
+        }
+
+        window.addEventListener('load', () => bootGame3D(0));
+    </script>
+</body>
+</html>
